@@ -17,6 +17,8 @@ from .arguments import add_default_arguments
 
 #@-node:imports
 #@+node:create_parser
+
+
 def create_parser():
     '''
     Creates an argparse parser.
@@ -39,6 +41,8 @@ def create_parser():
 
 #@-node:create_parser
 #@+node:main
+
+
 def main():
     """
     Front end for fcpget utility
@@ -52,12 +56,17 @@ def main():
 
     # try to create the node
     try:
-        n = node.FCPNode(host=args.fcphost, port=args.fcpport, verbosity=verbosity,
-                         logfile=sys.stderr)
+        n = node.FCPNode(
+            host=args.fcphost,
+            port=args.fcpport,
+            verbosity=verbosity,
+            logfile=sys.stderr)
     except:
         if verbose:
             traceback.print_exc(file=sys.stderr)
-        sys.stderr.write("Failed to connect to FCP service at %s:%s\n" % (args.fcphost, args.fcpport))
+        sys.stderr.write(
+            "Failed to connect to FCP service at %s:%s\n" %
+            (args.fcphost, args.fcpport))
 
     # determine the uri
     if not args.uri:

@@ -11,7 +11,11 @@ wrong node ip
 different IP Port
 """
 
-import sys, os, tempfile, random, uuid
+import sys
+import os
+import tempfile
+import random
+import uuid
 import fcp
 fcpHost = "127.0.0.1"
 workdir = tempfile.mkdtemp()
@@ -21,6 +25,7 @@ with open("index.html", "w") as f:
     f.write("<html><head><title>Test</title></head><body>Test</body></html>\n")
 
 node = fcp.FCPNode(host=fcpHost, verbosity=fcp.FATAL)
+
 
 def genkey(*args, **kwds):
     '''
@@ -33,6 +38,7 @@ def genkey(*args, **kwds):
     '''
     return node.genkey(*args, **kwds)
 
+
 def getUniqueId(*args, **kwds):
     '''
 
@@ -40,6 +46,7 @@ def getUniqueId(*args, **kwds):
     True
     '''
     return node._getUniqueId(*args, **kwds)
+
 
 def submitCmd(*args, **kwds):
     '''
@@ -74,6 +81,7 @@ def fcpPluginMessage(*args, **kwds):
     '''
     return node.fcpPluginMessage(*args, **kwds)
 
+
 def put(*args, **kwds):
     '''
 
@@ -107,6 +115,7 @@ def put(*args, **kwds):
     '''
     return node.put(*args, **kwds)
 
+
 def get(uri, *args, **kwds):
     '''
 
@@ -120,6 +129,8 @@ def get(uri, *args, **kwds):
     return node.get(uri, *args, **kwds)
 
 f
+
+
 def putdir(*args, **kwds):
     '''
 
@@ -132,6 +143,7 @@ def putdir(*args, **kwds):
     '''
     return node.putdir(*args, **kwds)
 
+
 def modifyconfig(*args, **kwds):
     '''
 
@@ -139,6 +151,7 @@ def modifyconfig(*args, **kwds):
 
     '''
     return node.modifyconfig(*args, **kwds)
+
 
 def getconfig(*args, **kwds):
     '''
@@ -148,6 +161,7 @@ def getconfig(*args, **kwds):
     '''
     return node.getconfig(*args, **kwds)
 
+
 def invertprivate(*args, **kwds):
     '''
 
@@ -156,6 +170,7 @@ def invertprivate(*args, **kwds):
     '''
     return node.invertprivate(*args, **kwds)
 
+
 def redirect(*args, **kwds):
     '''
 
@@ -163,6 +178,7 @@ def redirect(*args, **kwds):
 
     '''
     return node.redirect(*args, **kwds)
+
 
 def genchk(*args, **kwds):
     '''
@@ -188,6 +204,7 @@ def genchk(*args, **kwds):
     '''
     return node.genchk(*args, **kwds)
 
+
 def listpeers(*args, **kwds):
     '''
 
@@ -195,6 +212,7 @@ def listpeers(*args, **kwds):
 
     '''
     return node.listpeers(*args, **kwds)
+
 
 def listpeernotes(*args, **kwds):
     '''
@@ -204,6 +222,7 @@ def listpeernotes(*args, **kwds):
     '''
     return node.listpeernotes(*args, **kwds)
 
+
 def refstats(*args, **kwds):
     '''
 
@@ -211,6 +230,7 @@ def refstats(*args, **kwds):
 
     '''
     return node.refstats(*args, **kwds)
+
 
 def testDDA(*args, **kwds):
     '''
@@ -220,6 +240,7 @@ def testDDA(*args, **kwds):
     '''
     return node.testDDA(*args, **kwds)
 
+
 def addpeer(*args, **kwds):
     '''
 
@@ -227,6 +248,7 @@ def addpeer(*args, **kwds):
 
     '''
     return node.addpeer(*args, **kwds)
+
 
 def listpeer(*args, **kwds):
     '''
@@ -236,6 +258,7 @@ def listpeer(*args, **kwds):
     '''
     return node.listpeer(*args, **kwds)
 
+
 def modifypeer(*args, **kwds):
     '''
 
@@ -243,6 +266,7 @@ def modifypeer(*args, **kwds):
 
     '''
     return node.modifypeer(*args, **kwds)
+
 
 def modifypeernote(*args, **kwds):
     '''
@@ -252,6 +276,7 @@ def modifypeernote(*args, **kwds):
     '''
     return node.modifypeernote(*args, **kwds)
 
+
 def removepeer(*args, **kwds):
     '''
 
@@ -259,6 +284,7 @@ def removepeer(*args, **kwds):
 
     '''
     return node.removepeer(*args, **kwds)
+
 
 def namesiteAddLocal(*args, **kwds):
     '''
@@ -268,6 +294,7 @@ def namesiteAddLocal(*args, **kwds):
     '''
     return node.namesiteAddLocal(*args, **kwds)
 
+
 def namesiteAddRecord(*args, **kwds):
     '''
 
@@ -275,6 +302,7 @@ def namesiteAddRecord(*args, **kwds):
 
     '''
     return node.namesiteAddRecord(*args, **kwds)
+
 
 def namesiteLookup(*args, **kwds):
     '''
@@ -284,6 +312,7 @@ def namesiteLookup(*args, **kwds):
     '''
     return node.namesiteLookup(*args, **kwds)
 
+
 def listenGlobal(*args, **kwds):
     '''
 
@@ -291,6 +320,7 @@ def listenGlobal(*args, **kwds):
 
     '''
     return node.listenGlobal(*args, **kwds)
+
 
 def ignoreGlobal(*args, **kwds):
     '''
@@ -300,6 +330,7 @@ def ignoreGlobal(*args, **kwds):
     '''
     return node.ignoreGlobal(*args, **kwds)
 
+
 def purgePersistentJobs(*args, **kwds):
     '''
 
@@ -307,6 +338,7 @@ def purgePersistentJobs(*args, **kwds):
 
     '''
     return node.purgePersistentJobs(*args, **kwds)
+
 
 def getAllJobs(*args, **kwds):
     '''
@@ -316,6 +348,7 @@ def getAllJobs(*args, **kwds):
     '''
     return node.getAllJobs(*args, **kwds)
 
+
 def getPersistentJobs(*args, **kwds):
     '''
 
@@ -323,6 +356,7 @@ def getPersistentJobs(*args, **kwds):
 
     '''
     return node.getPersistentJobs(*args, **kwds)
+
 
 def getGlobalJobs(*args, **kwds):
     '''
@@ -332,6 +366,7 @@ def getGlobalJobs(*args, **kwds):
     '''
     return node.getGlobalJobs(*args, **kwds)
 
+
 def getTransientJobs(*args, **kwds):
     '''
 
@@ -339,6 +374,7 @@ def getTransientJobs(*args, **kwds):
 
     '''
     return node.getTransientJobs(*args, **kwds)
+
 
 def refreshPersistentRequests(*args, **kwds):
     '''
@@ -348,6 +384,7 @@ def refreshPersistentRequests(*args, **kwds):
     '''
     return node.refreshPersistentRequests(*args, **kwds)
 
+
 def clearGlobalJob(*args, **kwds):
     '''
 
@@ -355,6 +392,7 @@ def clearGlobalJob(*args, **kwds):
 
     '''
     return node.clearGlobalJob(*args, **kwds)
+
 
 def shutdown(*args, **kwds):
     '''
@@ -370,7 +408,7 @@ def _base30hex(integer):
     base30 = "0123456789abcdefghijklmnopqrst"
     b30 = []
     while integer:
-        b30.append(base30[integer%30])
+        b30.append(base30[integer % 30])
         integer = int(integer / 30)
     return "".join(reversed(b30))
 
@@ -379,7 +417,7 @@ def _test():
     import doctest
     tests = doctest.testmod()
     if tests.failed:
-        return "☹"*tests.failed + " / " + str(tests.attempted)
+        return "☹" * tests.failed + " / " + str(tests.attempted)
     return "^_^ (" + _base30hex(tests.attempted) + ")"
 
 

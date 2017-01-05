@@ -6,6 +6,7 @@ import argparse
 
 import fcp.node
 
+
 def timeout_type(time_str):
     '''
     Argparse argument type for timeouts.
@@ -14,6 +15,7 @@ def timeout_type(time_str):
         return fcp.node.parseTime(time_str)
     except:
         raise argparse.ArgumentTypeError("Invalid timeout: %s" % time_str)
+
 
 def add_default_arguments(parser):
     '''

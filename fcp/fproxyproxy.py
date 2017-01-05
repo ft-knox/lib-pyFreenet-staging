@@ -8,7 +8,12 @@ An http proxy atop fproxy which uses pyFreenet's 'name services'
 
 #@+others
 #@+node:imports
-import sys, os, getopt, traceback, mimetypes, time
+import sys
+import os
+import getopt
+import traceback
+import mimetypes
+import time
 from BaseHTTPServer import HTTPServer
 from SimpleHTTPServer import SimpleHTTPRequestHandler
 from SocketServer import ThreadingMixIn
@@ -24,16 +29,20 @@ progname = sys.argv[0]
 
 #@-node:globals
 #@+node:class Handler
+
+
 class Handler(SimpleHTTPRequestHandler):
     """
     Handles each FProxyProxy client request
     """
     #@    @+others
     #@+node:__init__
+
     def __init__(self, request, client_address, server):
 
         self.server = server
-        SimpleHTTPRequestHandler.__init__(self, request, client_address, server)
+        SimpleHTTPRequestHandler.__init__(
+            self, request, client_address, server)
 
     #@-node:__init__
     #@+node:do_GET
@@ -41,16 +50,16 @@ class Handler(SimpleHTTPRequestHandler):
 
         print "GET: client=%s path=%s" % (self.client_address, self.path)
 
-        #SimpleHTTPRequestHandler.do_GET(self)
+        # SimpleHTTPRequestHandler.do_GET(self)
 
         try:
             #mimetype, data = self.server.node.get(self.path[1:])
-            #self.send_response(200)
+            # self.send_response(200)
             #self.send_header("Content-type", mimetype)
             #self.send_header("Content-Length", str(len(data)))
-            #self.end_headers()
-            #self.wfile.write(data)
-            #self.wfile.flush()
+            # self.end_headers()
+            # self.wfile.write(data)
+            # self.wfile.flush()
 
             self.fproxyGet(self.path)
 
@@ -85,7 +94,7 @@ class Handler(SimpleHTTPRequestHandler):
                 "Please don't try to access it like a web server.",
                 "</body></html>",
                 "",
-                ])
+            ])
             self.send_header("Content-Length", str(len(data)))
             self.send_header("Location", location)
             self.end_headers()
@@ -95,8 +104,7 @@ class Handler(SimpleHTTPRequestHandler):
 
         # convert path to relative
         path = "/" + path[7:].split("/", 1)[-1]
-        #print "** path=%s" % repr(path)
-
+        # print "** path=%s" % repr(path)
 
         try:
             # check host header
@@ -105,7 +113,8 @@ class Handler(SimpleHTTPRequestHandler):
 
             print "** hostname = %s" % hostname
 
-            # second scenario, user has just given a domain name without trailing /
+            # second scenario, user has just given a domain name without
+            # trailing /
             if len(pathbits) == 1:
                 # redirect to force trailing slash
                 location = path + "/"
@@ -121,7 +130,7 @@ class Handler(SimpleHTTPRequestHandler):
                     "<a href=\"%s\">Click here</a>",
                     "</body></html>",
                     "",
-                    ]) % location
+                ]) % location
                 self.send_header("Content-Length", str(len(data)))
                 self.send_header("Location", location)
                 self.end_headers()
@@ -170,7 +179,7 @@ class Handler(SimpleHTTPRequestHandler):
                         "within <a href=\"/fproxy/\">FProxy</a>",
                         "</body></html>",
                         "",
-                        ])
+                    ])
                     self.send_header("Content-Length", str(len(data)))
                     self.end_headers()
                     self.wfile.write(data)
@@ -222,12 +231,15 @@ class Handler(SimpleHTTPRequestHandler):
 
 #@-node:class Handler
 #@+node:class FProxyProxy
+
+
 class FProxyProxy(ThreadingMixIn, HTTPServer):
     """
     an http proxy that runs atop fproxy, and uses the pyFreenet name service
     """
     #@    @+others
     #@+node:__init__
+
     def __init__(self, **kw):
         """
         runs the FProxyProxy service
@@ -239,7 +251,12 @@ class FProxyProxy(ThreadingMixIn, HTTPServer):
             - listenHost - hostname to listen on for client HTTP connections
             - listenPort - port to listen on for client HTTP connections
         """
-        for k in ['node', 'fproxyHost', 'fproxyPort', 'listenHost', 'listenPort']:
+        for k in [
+            'node',
+            'fproxyHost',
+            'fproxyPort',
+            'listenHost',
+                'listenPort']:
             setattr(self, k, kw[k])
 
         self.log = self.node._log
@@ -253,9 +270,10 @@ class FProxyProxy(ThreadingMixIn, HTTPServer):
         Starts the proxy, runs forever till interrupted
         """
         log = self.log
-        log(ERROR, "FproxyProxy listening on %s:%s" % (self.listenHost, self.listenPort))
+        log(ERROR, "FproxyProxy listening on %s:%s" %
+            (self.listenHost, self.listenPort))
         log(ERROR, "  -> forwarding requests to fproxy at %s:%s" % (
-                    self.fproxyHost, self.fproxyPort))
+            self.fproxyHost, self.fproxyPort))
 
         self.serve_forever()
 
@@ -264,23 +282,27 @@ class FProxyProxy(ThreadingMixIn, HTTPServer):
 
 #@-node:class FProxyProxy
 #@+node:usage
+
+
 def usage(msg=None, ret=1):
     """
     Prints usage message then exits
     """
     if msg:
-        sys.stderr.write(msg+"\n")
+        sys.stderr.write(msg + "\n")
     sys.stderr.write("Usage: %s [options] src-uri target-uri\n" % progname)
     sys.stderr.write("Type '%s -h' for help\n" % progname)
     sys.exit(ret)
 
 #@-node:usage
 #@+node:help
+
+
 def help():
     """
     print help options, then exit
     """
-    print "%s: runs an http proxy atop fproxy,"  % progname
+    print "%s: runs an http proxy atop fproxy," % progname
     print "which uses pyFreenet 'name services'"
     print
     print "Note - you should configure fproxyproxy as an http proxy"
@@ -314,6 +336,8 @@ def help():
 
 #@-node:help
 #@+node:main
+
+
 def main():
     """
     Front end for fproxyproxy utility
@@ -329,8 +353,8 @@ def main():
     listenPort = int(os.environ.get("FPROXYPROXY_PORT", 8889))
 
     opts = {
-            "Verbosity" : 0,
-            }
+        "Verbosity": 0,
+    }
 
     # process command line switches
     try:
@@ -340,14 +364,14 @@ def main():
             ["help", "verbose", "fcpHost=", "fcpPort=", "version",
              "listenAddress=", "fproxyAddress=",
              ]
-            )
+        )
     except getopt.GetoptError:
         # print help information and exit:
         usage()
         sys.exit(2)
     output = None
     verbose = False
-    #print cmdopts
+    # print cmdopts
     for o, a in cmdopts:
 
         if o in ("-?", "-h", "--help"):
@@ -405,9 +429,9 @@ def main():
 
     try:
         proxy = FProxyProxy(
-                    node=n,
-                    fproxyHost=fproxyHost, fproxyPort=fproxyPort,
-                    listenHost=listenHost, listenPort=listenPort)
+            node=n,
+            fproxyHost=fproxyHost, fproxyPort=fproxyPort,
+            listenHost=listenHost, listenPort=listenPort)
         proxy.run()
         sys.exit(0)
     except KeyboardInterrupt:

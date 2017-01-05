@@ -8,7 +8,6 @@ import distutils.command.install
 from distutils.core import setup
 
 
-
 doze = sys.platform.lower().startswith("win")
 
 scripts = ["freesitemgr", "pyNodeConfig",
@@ -21,6 +20,7 @@ if doze:
 
 
 class pyfreenet_install(distutils.command.install.install):
+
     def run(self, *args, **kwds):
         distutils.command.install.install.run(self, *args, **kwds)
         man_dir = os.path.abspath("./manpages/")
@@ -43,10 +43,10 @@ setup(name="pyFreenet",
       author="Arne Babenhauserheide",
       author_email="arne_bab@web.de",
       url="http://127.0.0.1:8888/USK@38~ZdMc3Kgjq16te1A7UvRrAZadwviLgePY~CzCq32c,Z9vOKndIpemk~hfwg5yQvZKetfrm6AXs36WKVCvIOBo,AQACAAE/pyFreenet/1/",
-      packages = ['fcp'],
-      scripts = scripts,
-      cmdclass={"install": pyfreenet_install} # thanks to lc-tools
-    )
+      packages=['fcp'],
+      scripts=scripts,
+      cmdclass={"install": pyfreenet_install}  # thanks to lc-tools
+      )
 
 
 # TODO: Only do this when the installation is to /
@@ -59,4 +59,3 @@ setup(name="pyFreenet",
 # i.finalize_unix()
 # print i.convert_paths("data")
 # print i.root, i.prefix
-

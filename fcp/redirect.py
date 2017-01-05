@@ -14,7 +14,11 @@ Inserts key 'KSK@darknet', as a redirect to the 'darknet index' freesite
 
 #@+others
 #@+node:imports
-import sys, os, getopt, traceback, mimetypes
+import sys
+import os
+import getopt
+import traceback
+import mimetypes
 
 import node
 
@@ -24,23 +28,27 @@ progname = sys.argv[0]
 
 #@-node:globals
 #@+node:usage
+
+
 def usage(msg=None, ret=1):
     """
     Prints usage message then exits
     """
     if msg:
-        sys.stderr.write(msg+"\n")
+        sys.stderr.write(msg + "\n")
     sys.stderr.write("Usage: %s [options] src-uri target-uri\n" % progname)
     sys.stderr.write("Type '%s -h' for help\n" % progname)
     sys.exit(ret)
 
 #@-node:usage
 #@+node:help
+
+
 def help():
     """
     print help options, then exit
     """
-    print "%s: inserts a key, as a redirect to another key"  % progname
+    print "%s: inserts a key, as a redirect to another key" % progname
     print
     print "Usage: %s [options] src-uri target-uri" % progname
     print
@@ -69,6 +77,8 @@ def help():
 
 #@-node:help
 #@+node:main
+
+
 def main():
     """
     Front end for fcpget utility
@@ -80,8 +90,8 @@ def main():
     fcpPort = node.defaultFCPPort
 
     opts = {
-            "Verbosity" : 0,
-            }
+        "Verbosity": 0,
+    }
 
     # process command line switches
     try:
@@ -90,14 +100,14 @@ def main():
             "?hvH:P:V",
             ["help", "verbose", "fcpHost=", "fcpPort=", "version",
              ]
-            )
+        )
     except getopt.GetoptError:
         # print help information and exit:
         usage()
         sys.exit(2)
     output = None
     verbose = False
-    #print cmdopts
+    # print cmdopts
     for o, a in cmdopts:
 
         if o in ("-?", "-h", "--help"):

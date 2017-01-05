@@ -78,7 +78,8 @@ Example usage::
 
 #@+others
 #@+node:imports
-import sys, os
+import sys
+import os
 import xml.dom
 import xml.dom.minidom
 from xml.dom.minidom import parse, parseString, getDOMImplementation
@@ -89,20 +90,27 @@ impl = getDOMImplementation()
 
 #@-node:globals
 #@+node:exceptions
+
+
 class MissingRootTag(Exception):
     """root tag name was not given"""
+
 
 class InvalidXML(Exception):
     """failed to parse XML input"""
 
+
 class CannotSave(Exception):
     """unable to save"""
+
 
 class InvalidNode(Exception):
     """not a valid minidom node"""
 
 #@-node:exceptions
 #@+node:class XMLFile
+
+
 class XMLFile:
     """
     Allows an xml file to be viewed and operated on
@@ -116,6 +124,7 @@ class XMLFile:
     """
     #@    @+others
     #@+node:__init__
+
     def __init__(self, **kw):
         """
         Create an XMLFile
@@ -174,7 +183,7 @@ class XMLFile:
             if not root:
                 # in which case, must give a root node name
                 raise MissingRootTag(
-                        "No existing content, so must specify root")
+                    "No existing content, so must specify root")
 
             # ok, create a blank dom
             self.dom = impl.createDocument(None, root, None)
@@ -185,8 +194,9 @@ class XMLFile:
         # now validate root tag
         if root:
             if rootnode.nodeName != root:
-                raise IncorrectRootTag("Gave root='%s', input has root='%s'" % (
-                    root, rootnode.nodeName))
+                raise IncorrectRootTag(
+                    "Gave root='%s', input has root='%s'" %
+                    (root, rootnode.nodeName))
 
         # need this for recursion in XMLNode
         self._childrenByName = {}
@@ -195,9 +205,9 @@ class XMLFile:
         # add all the child nodes
         for child in self.dom.childNodes:
             childnode = XMLNode(self, child)
-            #print "compare %s to %s" % (rootnode, child)
+            # print "compare %s to %s" % (rootnode, child)
             if child == rootnode:
-                #print "found root"
+                # print "found root"
                 self.root = childnode
         setattr(self, rootnode.nodeName, self.root)
 
@@ -263,6 +273,8 @@ class XMLFile:
 
 #@-node:class XMLFile
 #@+node:class XMLNode
+
+
 class XMLNode:
     """
     This is the workhorse for the xml object interface
@@ -273,6 +285,7 @@ class XMLNode:
     """
     #@    @+others
     #@+node:__init__
+
     def __init__(self, parent, node):
         """
         You shouldn't need to instantiate this directly
@@ -293,13 +306,14 @@ class XMLNode:
         # as itself, and with second and subsequent instances, we make a list
         parentDict = self._parent._childrenByName
         nodeName = node.nodeName
-        if not parentDict.has_key(nodeName):
+        if nodeName not in parentDict:
             parentDict[nodeName] = parent.__dict__[nodeName] = self
         else:
             if isinstance(parentDict[nodeName], XMLNode):
                 # this is the second child node of a given tag name, so convert
                 # the instance to a list
-                parentDict[nodeName] = parent.__dict__[nodeName] = [parentDict[nodeName]]
+                parentDict[nodeName] = parent.__dict__[
+                    nodeName] = [parentDict[nodeName]]
             parentDict[nodeName].append(self)
 
         # figure out our type
@@ -353,7 +367,7 @@ class XMLNode:
         Supports some magic attributes:
             - _text - the value of the first child node of type text
         """
-        #print "%s: __getattr__: attr=%s" % (self, attr)
+        # print "%s: __getattr__: attr=%s" % (self, attr)
 
         # magic attribute to return text
         if attr == '_text':
@@ -370,15 +384,14 @@ class XMLNode:
 
         if self._node.hasAttribute(attr):
             return self._node.getAttribute(attr)
-        elif self._childrenByName.has_key(attr):
+        elif attr in self._childrenByName:
             return self._childrenByName[attr]
 
-        #elif attr == 'value':
+        # elif attr == 'value':
             # magic attribute
 
         else:
             raise AttributeError(attr)
-
 
     #@-node:__getattr__
     #@+node:__setattr__
@@ -428,7 +441,7 @@ class XMLNode:
             self._node.nodeValue = val
         else:
             # discern between attribute and child node
-            if self._childrenByName.has_key(attr):
+            if attr in self._childrenByName:
                 raise Exception("Attribute Exists")
             self._node.setAttribute(attr, str(val))
 
@@ -444,19 +457,21 @@ class XMLNode:
         """
         Returns a list of (attrname, attrval) tuples for this tag
         """
-        return [self._node.getAttribute(k) for k in self._node.attributes.keys()]
+        return [self._node.getAttribute(k)
+                for k in self._node.attributes.keys()]
 
     def _items(self):
         """
         returns a list of attribute values for this tag
         """
-        return [(k, self._node.getAttribute(k)) for k in self._node.attributes.keys()]
+        return [(k, self._node.getAttribute(k))
+                for k in self._node.attributes.keys()]
 
     def _has_key(self, k):
         """
         returns True if this tag has an attribute of the given name
         """
-        return self._node.hasAttribute(k) or self._childrenByName.has_key(k)
+        return self._node.hasAttribute(k) or k in self._childrenByName
 
     def _get(self, k, default=None):
         """
@@ -468,6 +483,7 @@ class XMLNode:
             return default
     #@-node:_keys
     #@+node:__len__
+
     def __len__(self):
         """
         returns number of child nodes
@@ -482,7 +498,7 @@ class XMLNode:
         try to return the child tag (or list of child tags) having
         the key as the tag name
         """
-        #print "__getitem__: idx=%s" % str(idx)
+        # print "__getitem__: idx=%s" % str(idx)
 
         if isinstance(idx, slice) or isinstance(idx, int):
             return self._children[idx]
@@ -513,7 +529,7 @@ class XMLNode:
             parentDict = self._childrenByName
             nodeName = child._node.nodeName
 
-            if not parentDict.has_key(nodeName):
+            if nodeName not in parentDict:
                 parentDict[nodeName] = self.__dict__[nodeName] = child
             else:
                 if isinstance(parentDict[nodeName], XMLNode):
@@ -521,7 +537,7 @@ class XMLNode:
                     # the instance to a list
                     parentDict[nodeName] \
                         = self.__dict__[nodeName] \
-                            = [parentDict[nodeName]]
+                        = [parentDict[nodeName]]
 
                 parentDict[nodeName].append(child)
 
@@ -538,7 +554,6 @@ class XMLNode:
             childNode = child
             child = childNode.nodeName
             self._node.appendChild(childNode)
-
 
         return XMLNode(self, childNode)
 
@@ -573,7 +588,7 @@ class XMLNode:
                 node._children.remove(child)
                 node._node.removeChild(child._node)
 
-            for k,v in node._childrenByName.items():
+            for k, v in node._childrenByName.items():
                 if child == v:
                     del node._childrenByName[k]
                 elif isinstance(v, list):

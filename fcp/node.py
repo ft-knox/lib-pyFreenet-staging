@@ -46,47 +46,56 @@ _pollInterval = 0.03
 
 #@-node:imports
 #@+node:exceptions
+
+
 class ConnectionRefused(Exception):
     """
     cannot connect to given host/port
     """
+
 
 class PrivacyRisk(Exception):
     """
     The following code would pose a privacy risk
     """
 
+
 class FCPException(Exception):
 
     def __init__(self, info=None, **kw):
-        #print "Creating fcp exception"
+        # print "Creating fcp exception"
         if not info:
             info = kw
         self.info = info
-        #print "fcp exception created"
+        # print "fcp exception created"
         Exception.__init__(self, str(info))
 
     def __str__(self):
 
         parts = []
         for k in ['header', 'ShortCodeDescription', 'CodeDescription']:
-            if self.info.has_key(k):
+            if k in self.info:
                 parts.append(str(self.info[k]))
         return ";".join(parts) or "??"
+
 
 class FCPGetFailed(FCPException):
     pass
 
+
 class FCPPutFailed(FCPException):
     pass
 
+
 class FCPProtocolError(FCPException):
     pass
+
 
 class FCPNodeFailure(Exception):
     """
     node seems to have died
     """
+
 
 class FCPSendTimeout(FCPException):
     """
@@ -94,10 +103,12 @@ class FCPSendTimeout(FCPException):
     """
     pass
 
+
 class FCPNodeTimeout(FCPException):
     """
     timed out waiting for node to respond
     """
+
 
 class FCPNameLookupFailure(Exception):
     """
@@ -113,15 +124,15 @@ defaultFProxyHost = "127.0.0.1"
 defaultFProxyPort = 8888
 
 # may set environment vars for FCP host/port
-if os.environ.has_key("FCP_HOST"):
+if "FCP_HOST" in os.environ:
     defaultFCPHost = os.environ["FCP_HOST"].strip()
-if os.environ.has_key("FCP_PORT"):
+if "FCP_PORT" in os.environ:
     defaultFCPPort = int(os.environ["FCP_PORT"].strip())
 
 # ditto for fproxy host/port
-if os.environ.has_key("FPROXY_HOST"):
+if "FPROXY_HOST" in os.environ:
     defaultFProxyHost = os.environ["FPROXY_HOST"].strip()
-if os.environ.has_key("FPROXY_PORT"):
+if "FPROXY_PORT" in os.environ:
     defaultFProxyPort = int(os.environ["FPROXY_PORT"].strip())
 
 # poll timeout period for manager thread
@@ -132,10 +143,10 @@ pollTimeout = 0.1
 # int values
 intKeys = [
     'DataLength', 'Code',
-    ]
+]
 
 # for the FCP 'ClientHello' handshake
-expectedVersion="2.0"
+expectedVersion = "2.0"
 
 # logger verbosity levels
 SILENT = 0
@@ -163,6 +174,8 @@ fcpVersion = "0.3.4"
 
 #@-node:globals
 #@+node:class FCPNode
+
+
 class FCPNode:
     """
     Represents an interface to a freenet node via its FCP port,
@@ -209,7 +222,7 @@ class FCPNode:
     """
 
     svnLongRevision = "$Revision$"
-    svnRevision = svnLongRevision[ 11 : -2 ]
+    svnRevision = svnLongRevision[11: -2]
 
     #@    @+others
     #@+node:attribs
@@ -217,15 +230,15 @@ class FCPNode:
 
     nodeIsAlive = False
 
-    nodeVersion = None;
-    nodeFCPVersion = None;
-    nodeBuild = None;
-    nodeRevision = None;
-    nodeExtBuild = None;
-    nodeExtRevision = None;
-    nodeIsTestnet = None;
-    compressionCodecs = [("GZIP", 0), ("BZIP2", 1), ("LZMA", 2)]; # safe defaults
-
+    nodeVersion = None
+    nodeFCPVersion = None
+    nodeBuild = None
+    nodeRevision = None
+    nodeExtBuild = None
+    nodeExtRevision = None
+    nodeIsTestnet = None
+    compressionCodecs = [("GZIP", 0), ("BZIP2", 1),
+                         ("LZMA", 2)]  # safe defaults
 
     #@-node:attribs
     #@+node:__init__
@@ -287,7 +300,9 @@ class FCPNode:
         if(None != logfile and not hasattr(logfile, 'write')):
             # might be a pathname
             if not isinstance(logfile, str):
-                raise Exception("Bad logfile '%s', must be pathname or file object" % logfile)
+                raise Exception(
+                    "Bad logfile '%s', must be pathname or file object" %
+                    logfile)
             logfile = file(logfile, "a")
         self.logfile = logfile
         self.logfunc = logfunc
@@ -298,12 +313,13 @@ class FCPNode:
         if(None != self.socketTimeout):
             try:
                 self.socket.settimeout(self.socketTimeout)
-            except Exception, e:
-                # Socket timeout setting is not available until Python 2.3, so ignore exceptions
+            except Exception as e:
+                # Socket timeout setting is not available until Python 2.3, so
+                # ignore exceptions
                 pass
         try:
             self.socket.connect((self.host, self.port))
-        except Exception, e:
+        except Exception as e:
             raise Exception("Failed to connect to %s:%s - %s" % (self.host,
                                                                  self.port,
                                                                  e))
@@ -313,8 +329,8 @@ class FCPNode:
         self.nodeIsAlive = True
 
         # the pending job tickets
-        self.jobs = {} # keyed by request ID
-        self.keepJobs = [] # job ids that should never be removed from self.jobs
+        self.jobs = {}  # keyed by request ID
+        self.keepJobs = []  # job ids that should never be removed from self.jobs
 
         # queue for incoming client requests
         self.clientReqQueue = Queue.Queue()
@@ -377,8 +393,8 @@ class FCPNode:
             priv = priv + name
 
             if kw.get("usk", False):
-                pub = pub.replace("SSK@", "USK@")+"/0"
-                priv = priv.replace("SSK@", "USK@")+"/0"
+                pub = pub.replace("SSK@", "USK@") + "/0"
+                priv = priv.replace("SSK@", "USK@") + "/0"
 
         return pub, priv
 
@@ -409,13 +425,13 @@ class FCPNode:
         if not id:
             id = self._getUniqueId()
 
-        params = dict(PluginName = kw.get('plugin_name'),
-                      Identifier = id,
-                      async      = kw.get('async',False),
-                      callback   = kw.get('callback',None))
+        params = dict(PluginName=kw.get('plugin_name'),
+                      Identifier=id,
+                      async=kw.get('async', False),
+                      callback=kw.get('callback', None))
 
-        for key, val in kw.get('plugin_params',{}).iteritems():
-            params.update({'Param.%s' % str(key) : val})
+        for key, val in kw.get('plugin_params', {}).iteritems():
+            params.update({'Param.%s' % str(key): val})
 
         return self._submitCmd(id, "FCPPluginMessage", **params)
 
@@ -474,7 +490,7 @@ class FCPNode:
         opts['async'] = kw.pop('async', False)
         opts['followRedirect'] = kw.pop('followRedirect', False)
         opts['waituntilsent'] = kw.get('waituntilsent', False)
-        if kw.has_key('callback'):
+        if 'callback' in kw:
             opts['callback'] = kw['callback']
         opts['Persistence'] = kw.pop('persistence', 'connection')
         if kw.get('Global', False):
@@ -527,7 +543,8 @@ class FCPNode:
 
         # process uri, including possible namesite lookups
         uri = uri.split("freenet:")[-1]
-        if len(uri) < 5 or (uri[:4] not in ('SSK@', 'KSK@', 'CHK@', 'USK@', 'SVK@')):
+        if len(uri) < 5 or (uri[:4] not in (
+                'SSK@', 'KSK@', 'CHK@', 'USK@', 'SVK@')):
             # we seem to have a 'domain name' uri
             try:
                 domain, rest = uri.split("/", 1)
@@ -538,7 +555,7 @@ class FCPNode:
             tgtUri = self.namesiteLookup(domain)
             if not tgtUri:
                 raise FCPNameLookupFailure(
-                        "Failed to resolve freenet domain '%s'" % domain)
+                    "Failed to resolve freenet domain '%s'" % domain)
             if rest:
                 uri = (tgtUri + "/" + rest).replace("//", "/")
             else:
@@ -552,7 +569,7 @@ class FCPNode:
 
         opts['timeout'] = int(kw.pop("timeout", ONE_YEAR))
 
-        #print "get: opts=%s" % opts
+        # print "get: opts=%s" % opts
 
         # ---------------------------------
         # now enqueue the request
@@ -619,7 +636,7 @@ class FCPNode:
             - exactly one of 'file', 'data' or 'dir' keyword arguments must be present
         """
         # divert to putdir if dir keyword present
-        if kw.has_key('dir'):
+        if 'dir' in kw:
             self._log(DETAIL, "put => putdir")
             return self.putdir(uri, **kw)
 
@@ -630,11 +647,11 @@ class FCPNode:
         opts['async'] = kw.get('async', False)
         opts['waituntilsent'] = kw.get('waituntilsent', False)
         opts['keep'] = kw.get('keep', False)
-        if kw.has_key('callback'):
+        if 'callback' in kw:
             opts['callback'] = kw['callback']
 
         self._log(DETAIL, "put: uri=%s async=%s waituntilsent=%s" % (
-                            uri, opts['async'], opts['waituntilsent']))
+            uri, opts['async'], opts['waituntilsent']))
 
         opts['Persistence'] = kw.pop('persistence', 'connection')
         if kw.get('Global', False):
@@ -645,14 +662,14 @@ class FCPNode:
         if opts['Global'] == 'true' and opts['Persistence'] == 'connection':
             raise Exception("Global requests must be persistent")
 
-
         if kw.get('Global', False):
             # listen to the global queue
             self.listenGlobal()
 
         # process uri, including possible namesite lookups
         uri = uri.split("freenet:")[-1]
-        if len(uri) < 4 or (uri[:4] not in ('SSK@', 'KSK@', 'CHK@', 'USK@', 'SVK@')):
+        if len(uri) < 4 or (uri[:4] not in (
+                'SSK@', 'KSK@', 'CHK@', 'USK@', 'SVK@')):
             # we seem to have a 'domain name' uri
             try:
                 domain, rest = uri.split("/", 1)
@@ -680,7 +697,8 @@ class FCPNode:
                 # only use basename, if it has an extension
                 filename = os.path.basename(uri)
             else:
-                # no CHK@ file extension, try for filename (only in "file" mode)
+                # no CHK@ file extension, try for filename (only in "file"
+                # mode)
                 if kw.get('file', None) is not None:
                     filename = os.path.basename(kw['file'])
                 else:
@@ -710,33 +728,32 @@ class FCPNode:
                                 self.defaultCompressionCodecsString())
         opts['LocalRequestOnly'] = kw.get('LocalRequestOnly', False)
 
-        if kw.has_key("file"):
+        if "file" in kw:
             filepath = os.path.abspath(kw['file'])
             opts['UploadFrom'] = "disk"
             opts['Filename'] = filepath
-            if not kw.has_key("mimetype"):
+            if "mimetype" not in kw:
                 opts['Metadata.ContentType'] = guessMimetype(kw['file'])
             # Add a base64 encoded sha256 hash of the file to sidestep DDA
             opts['FileHash'] = base64.encodestring(
                 sha256dda(self.connectionidentifier, id,
                           path=filepath))
 
-        elif kw.has_key("data"):
+        elif "data" in kw:
             opts["UploadFrom"] = "direct"
             opts["Data"] = kw['data']
             targetFilename = kw.get('name')
             if targetFilename:
                 opts["TargetFilename"] = targetFilename
 
-        elif kw.has_key("redirect"):
+        elif "redirect" in kw:
             opts["UploadFrom"] = "redirect"
             opts["TargetURI"] = kw['redirect']
         elif chkOnly != "true":
             raise Exception("Must specify file, data or redirect keywords")
 
-        if "TargetFilename" in kw: # for CHKs
+        if "TargetFilename" in kw:  # for CHKs
             opts["TargetFilename"] = kw["TargetFilename"]
-
 
         opts['timeout'] = int(kw.get("timeout", ONE_YEAR))
 
@@ -750,8 +767,7 @@ class FCPNode:
         if "IgnoreUSKDatehints" in kw:
             opts["IgnoreUSKDatehints"] = kw["IgnoreUSKDatehints"]
 
-
-        #print "sendEnd=%s" % sendEnd
+        # print "sendEnd=%s" % sendEnd
 
         # ---------------------------------
         # now dispatch the job
@@ -828,16 +844,16 @@ class FCPNode:
 
         filebyfile = kw.get('filebyfile', False)
 
-        #if filebyfile:
+        # if filebyfile:
         #    raise Hell
 
-        if kw.has_key('allatonce'):
+        if 'allatonce' in kw:
             allAtOnce = kw['allatonce']
             filebyfile = True
         else:
             allAtOnce = False
 
-        if kw.has_key('maxconcurrent'):
+        if 'maxconcurrent' in kw:
             maxConcurrent = kw['maxconcurrent']
             filebyfile = True
             allAtOnce = True
@@ -884,8 +900,8 @@ class FCPNode:
         # procure a manifest dict, whether supplied by caller or derived
         if manifestDict:
             # work from the manifest provided by caller
-            #print "got manifest kwd"
-            #print manifestDict
+            # print "got manifest kwd"
+            # print manifestDict
             manifest = []
             for relpath, attrDict in manifestDict.items():
                 if attrDict['changed'] or (relpath == "index.html"):
@@ -894,12 +910,12 @@ class FCPNode:
                     manifest.append(attrDict)
         else:
             # build manifest by reading the directory
-            #print "no manifest kwd"
+            # print "no manifest kwd"
             manifest = readdir(kw['dir'])
             manifestDict = {}
             for rec in manifest:
                 manifestDict[rec['relpath']] = rec
-            #print manifestDict
+            # print manifestDict
 
         #@-node:<<get inventory>>
         #@nl
@@ -972,17 +988,18 @@ class FCPNode:
 
                     log(DETAIL, "n=%s relpath=%s" % (repr(n), repr(relpath)))
 
-                    msgLines.extend(["Files.%d.Name=%s" % (n, relpath),
-                                     "Files.%d.UploadFrom=redirect" % n,
-                                     "Files.%d.TargetURI=%s" % (n, filerec['uri']),
-                                    ])
+                    msgLines.extend(["Files.%d.Name=%s" %
+                                     (n, relpath), "Files.%d.UploadFrom=redirect" %
+                                     n, "Files.%d.TargetURI=%s" %
+                                     (n, filerec['uri']), ])
                     n += 1
 
                 # finish the command buffer
                 msgLines.append("EndMessage")
                 manifestInsertCmdBuf = "\n".join(msgLines) + "\n"
 
-                # gotta log the command buffer here, since it's not sent via .put()
+                # gotta log the command buffer here, since it's not sent via
+                # .put()
                 for line in msgLines:
                     log(DETAIL, line)
 
@@ -1015,11 +1032,11 @@ class FCPNode:
                 # get progress counts
                 nQueued = len(jobs)
                 nComplete = len(
-                                filter(
-                                    lambda j: j.isComplete(),
-                                    jobs
-                                    )
-                                )
+                    filter(
+                        lambda j: j.isComplete(),
+                        jobs
+                    )
+                )
                 nWaiting = nTotal - nQueued
                 nInserting = nQueued - nComplete
 
@@ -1042,12 +1059,14 @@ class FCPNode:
                     time.sleep(_pollInterval)
                     continue
 
-                # just go round again if manifest is empty (all remaining are in progress)
+                # just go round again if manifest is empty (all remaining are
+                # in progress)
                 if len(manifest) == 0:
                     time.sleep(_pollInterval)
                     continue
 
-                # got >0 waiting jobs and >0 spare slots, so we can submit a new one
+                # got >0 waiting jobs and >0 spare slots, so we can submit a
+                # new one
                 filerec = manifest.pop(0)
                 relpath = filerec['relpath']
                 fullpath = filerec['fullpath']
@@ -1057,9 +1076,9 @@ class FCPNode:
 
                 log(INFO, "Launching insert of %s" % relpath)
 
-
                 # gotta suck raw data, since we might be inserting to a remote FCP
-                # service (which means we can't use 'file=' (UploadFrom=pathmae) keyword)
+                # service (which means we can't use 'file='
+                # (UploadFrom=pathmae) keyword)
                 raw = file(fullpath, "rb").read()
 
                 print "globalMode=%s persistence=%s" % (globalMode, persistence)
@@ -1080,14 +1099,14 @@ class FCPNode:
                 filerec['job'] = job
                 job.filerec = filerec
 
-                # wait for that job to finish if we are in the slow 'one at a time' mode
+                # wait for that job to finish if we are in the slow 'one at a
+                # time' mode
                 if not allAtOnce:
                     job.wait()
                     log(INFO, "Insert finished for %s" % relpath)
 
             # all done
             log(INFO, "All raw files now inserted (or failed)")
-
 
         #@-node:<<single-file inserts>>
         #@nl
@@ -1131,15 +1150,17 @@ class FCPNode:
                 #uri = filerec['uri'] or filerec['job'].result
                 uri = job.result
                 if not uri:
-                    raise Exception("Can't find a URI for file %s" % filerec['relpath'])
+                    raise Exception(
+                        "Can't find a URI for file %s" %
+                        filerec['relpath'])
 
                 msgLines.extend(["Files.%d.UploadFrom=redirect" % n,
                                  "Files.%d.TargetURI=%s" % (n, uri),
-                                ])
+                                 ])
             else:
                 msgLines.extend(["Files.%d.UploadFrom=disk" % n,
                                  "Files.%d.Filename=%s" % (n, fullpath),
-                                ])
+                                 ])
             n += 1
 
         # finish the command buffer
@@ -1161,14 +1182,14 @@ class FCPNode:
             finalResult = "no_uri"
         else:
             finalResult = self._submitCmd(
-                            id, "ClientPutComplexDir",
-                            rawcmd=manifestInsertCmdBuf,
-                            async=kw.get('async', False),
-                            Global=globalMode,
-                            persistence=persistence,
-                            waituntilsent=kw.get('waituntilsent', False),
-                            callback=kw.get('callback', False),
-                            )
+                id, "ClientPutComplexDir",
+                rawcmd=manifestInsertCmdBuf,
+                async=kw.get('async', False),
+                Global=globalMode,
+                persistence=persistence,
+                waituntilsent=kw.get('waituntilsent', False),
+                callback=kw.get('callback', False),
+            )
 
         #@-node:<<insert manifest>>
         #@nl
@@ -1235,7 +1256,7 @@ class FCPNode:
         bits = privatekey.split("/", 1)
         mainUri = bits[0]
 
-        uri = self.put(mainUri+"/foo", data="bar", chkonly=1)
+        uri = self.put(mainUri + "/foo", data="bar", chkonly=1)
 
         uri = uri.split("/")[0]
         uri = "/".join([uri] + bits[1:])
@@ -1363,16 +1384,19 @@ class FCPNode:
             - WithWriteDirectory - default False - if True, want node to write to directory for a get operation
         """
         # cache the testDDA:
-        DDAkey = (kw["Directory"], kw.get("WantReadDirectory", False), kw.get("WantWriteDirectory", False))
+        DDAkey = (
+            kw["Directory"], kw.get(
+                "WantReadDirectory", False), kw.get(
+                "WantWriteDirectory", False))
         try:
             return self.testedDDA[DDAkey]
         except KeyError:
-            pass # we actually have to test this dir.
+            pass  # we actually have to test this dir.
         requestResult = self._submitCmd("__global", "TestDDARequest", **kw)
         writeFilename = None
         kw = {}
         kw['Directory'] = requestResult['Directory']
-        if requestResult.has_key('ReadFilename'):
+        if 'ReadFilename' in requestResult:
             readFilename = requestResult['ReadFilename']
             readFile = open(readFilename, 'rb')
             readFileContents = readFile.read()
@@ -1380,7 +1404,7 @@ class FCPNode:
             kw['ReadFilename'] = readFilename
             kw['ReadContent'] = readFileContents
 
-        if requestResult.has_key('WriteFilename') and requestResult.has_key('ContentToWrite'):
+        if 'WriteFilename' in requestResult and 'ContentToWrite' in requestResult:
             writeFilename = requestResult['WriteFilename']
             contentToWrite = requestResult['ContentToWrite']
             writeFile = open(writeFilename, "w+b")
@@ -1388,7 +1412,8 @@ class FCPNode:
             writeFile.close()
             writeFileStatObject = os.stat(writeFilename)
             writeFileMode = writeFileStatObject.st_mode
-            os.chmod(writeFilename, writeFileMode | stat.S_IREAD | stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+            os.chmod(writeFilename, writeFileMode | stat.S_IREAD |
+                     stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
 
         responseResult = self._submitCmd("__global", "TestDDAResponse", **kw)
         if writeFilename is not None:
@@ -1532,7 +1557,8 @@ class FCPNode:
         if path:
             self.namesiteFile = path
         else:
-            self.namesiteFile = os.path.join(os.path.expanduser("~"), ".freenames")
+            self.namesiteFile = os.path.join(
+                os.path.expanduser("~"), ".freenames")
 
         self.namesiteLocals = []
         self.namesitePeers = []
@@ -1594,14 +1620,16 @@ class FCPNode:
 
         for rec in self.namesiteLocals:
             if rec['name'] == name:
-                raise Exception("Already got a local service called '%s'" % name)
+                raise Exception(
+                    "Already got a local service called '%s'" %
+                    name)
 
         self.namesiteLocals.append(
-            {'name':name,
-             'privuri':privuri,
+            {'name': name,
+             'privuri': privuri,
              'puburi': puburi,
              'cache': {},
-            })
+             })
 
         self.namesiteSave()
 
@@ -1657,7 +1685,7 @@ class FCPNode:
             Global=True,
             priority=0,
             async=True,
-            )
+        )
 
         self.refreshPersistentRequests()
 
@@ -1696,7 +1724,7 @@ class FCPNode:
         if self.namesiteHasPeer(name):
             raise Exception("Peer nameservice '%s' already exists" % name)
 
-        self.namesitePeers.append({'name':name, 'puburi':uri})
+        self.namesitePeers.append({'name': name, 'puburi': uri})
 
         self.namesiteSave()
 
@@ -1839,7 +1867,8 @@ class FCPNode:
         """
         Returns a list of persistent jobs, excluding global jobs
         """
-        return [j for j in self.jobs.values() if j.isPersistent and not j.isGlobal]
+        return [j for j in self.jobs.values(
+        ) if j.isPersistent and not j.isGlobal]
 
     #@-node:getPersistentJobs
     #@+node:getGlobalJobs
@@ -1871,8 +1900,9 @@ class FCPNode:
         """
         self._log(DETAIL, "listPersistentRequests")
 
-        if self.jobs.has_key('__global'):
-            raise Exception("An existing non-identifier job is currently pending")
+        if '__global' in self.jobs:
+            raise Exception(
+                "An existing non-identifier job is currently pending")
 
         # ---------------------------------
         # format the request
@@ -1882,7 +1912,7 @@ class FCPNode:
         opts['Identifier'] = id
 
         opts['async'] = kw.pop('async', False)
-        if kw.has_key('callback'):
+        if 'callback' in kw:
             opts['callback'] = kw['callback']
 
         # ---------------------------------
@@ -1895,8 +1925,13 @@ class FCPNode:
         """
         Removes a job from the jobs queue
         """
-        self._submitCmd(id, "RemovePersistentRequest",
-                        Identifier=id, Global=True, async=True, waituntilsent=True)
+        self._submitCmd(
+            id,
+            "RemovePersistentRequest",
+            Identifier=id,
+            Global=True,
+            async=True,
+            waituntilsent=True)
 
     #@-node:clearGlobalJob
     #@+node:setSocketTimeout
@@ -1907,8 +1942,9 @@ class FCPNode:
         """
         try:
             return self.socket.gettimeout()
-        except Exception, e:
-            # Socket timeout setting is not available until Python 2.3, so ignore exceptions
+        except Exception as e:
+            # Socket timeout setting is not available until Python 2.3, so
+            # ignore exceptions
             pass
         return None
 
@@ -1928,8 +1964,9 @@ class FCPNode:
         self.socketTimeout = socketTimeout
         try:
             self.socket.settimeout(self.socketTimeout)
-        except Exception, e:
-            # Socket timeout setting is not available until Python 2.3, so ignore exceptions
+        except Exception as e:
+            # Socket timeout setting is not available until Python 2.3, so
+            # ignore exceptions
             pass
 
     #@-node:setSocketTimeout
@@ -1988,15 +2025,14 @@ class FCPNode:
                 del self.socket
 
         # and close the logfile
-        if None != self.logfile and self.logfile not in [sys.stdout, sys.stderr]:
+        if None != self.logfile and self.logfile not in [
+                sys.stdout, sys.stderr]:
             self.logfile.close()
 
         log(DETAIL, "shutdown: done?")
 
     #@-node:shutdown
     #@-others
-
-
 
     #@-node:Other High Level Methods
     #@+node:Manager Thread
@@ -2043,7 +2079,7 @@ class FCPNode:
 
             self._log(DETAIL, "_mgrThread: Manager thread terminated normally")
 
-        except Exception, e:
+        except Exception as e:
             traceback.print_exc()
             self._log(CRITICAL, "_mgrThread: manager thread crashed")
 
@@ -2122,7 +2158,8 @@ class FCPNode:
 
         log = self._log
 
-        log(DEBUG, "_submitCmd: id=" + repr(id) + ", cmd=" + repr(cmd) + ", **" + repr(kw))
+        log(DEBUG, "_submitCmd: id=" + repr(id) +
+            ", cmd=" + repr(cmd) + ", **" + repr(kw))
 
         async = kw.pop('async', False)
         followRedirect = kw.pop('followRedirect', True)
@@ -2130,11 +2167,11 @@ class FCPNode:
         waituntilsent = kw.pop('waituntilsent', False)
         keepjob = kw.pop('keep', False)
         timeout = kw.pop('timeout', ONE_YEAR)
-        if( kw.has_key( "kwdict" )):
-            kwdict = kw[ "kwdict" ]
-            del kw[ "kwdict" ]
+        if("kwdict" in kw):
+            kwdict = kw["kwdict"]
+            del kw["kwdict"]
             for key in kwdict.keys():
-                kw[ key ] = kwdict[ key ]
+                kw[key] = kwdict[key]
         job = JobTicket(
             self, id, cmd, kw,
             verbosity=self.verbosity, logger=self._log, keep=keepjob,
@@ -2156,7 +2193,6 @@ class FCPNode:
         #                                                    str([(k,str(kw.get(k, ""))[:128])
         #                                                         for k
         #                                                         in kw])))
-
 
         if async:
             if waituntilsent:
@@ -2235,12 +2271,12 @@ class FCPNode:
         # handle ClientGet responses
 
         if hdr == 'DataFound':
-            if( job.kw.has_key( 'URI' )):
+            if('URI' in job.kw):
                 log(INFO, "Got DataFound for URI=%s" % job.kw['URI'])
             else:
                 log(ERROR, "Got DataFound without URI")
             mimetype = msg['Metadata.ContentType']
-            if job.kw.has_key('Filename'):
+            if 'Filename' in job.kw:
                 # already stored to disk, done
                 #resp['file'] = file
                 result = (mimetype, job.kw['Filename'], msg)
@@ -2258,7 +2294,7 @@ class FCPNode:
             else:
                 # is this a persistent get?
                 if job.kw['ReturnType'] == 'direct' \
-                and job.kw.get('Persistence', None) != 'connection':
+                        and job.kw.get('Persistence', None) != 'connection':
                     # gotta poll for request status so we can get our data
                     # FIXME: this is a hack, clean it up
                     log(INFO, "Request was persistent")
@@ -2269,11 +2305,14 @@ class FCPNode:
                             isGlobal = "false"
                         job.gotPersistentDataFound = True
                         log(INFO, "  --> sending GetRequestStatus")
-                        self._txMsg("GetRequestStatus",
-                                    Identifier=job.kw['Identifier'],
-                                    Persistence=msg.get("Persistence", "connection"),
-                                    Global=isGlobal,
-                                    )
+                        self._txMsg(
+                            "GetRequestStatus",
+                            Identifier=job.kw['Identifier'],
+                            Persistence=msg.get(
+                                "Persistence",
+                                "connection"),
+                            Global=isGlobal,
+                        )
 
                 job.callback('pending', msg)
                 job.mimetype = mimetype
@@ -2308,18 +2347,21 @@ class FCPNode:
 
         if hdr == 'GetFailed':
             # see if it's just a redirect problem
-            if job.followRedirect and msg.get('ShortCodeDescription', None) == "New URI":
+            if job.followRedirect and msg.get(
+                    'ShortCodeDescription', None) == "New URI":
                 uri = msg['RedirectURI']
                 job.kw['URI'] = uri
-                job.kw['id'] = self._getUniqueId();
+                job.kw['id'] = self._getUniqueId()
                 self._txMsg(job.cmd, **job.kw)
                 log(DETAIL, "Redirect to %s" % uri)
                 return
             # see if it's just a TOO_MANY_PATH_COMPONENTS redirect
-            if job.followRedirect and msg.get('ShortCodeDescription', None) == "Too many path components":
+            if job.followRedirect and msg.get(
+                'ShortCodeDescription',
+                    None) == "Too many path components":
                 uri = msg['RedirectURI']
                 job.kw['URI'] = uri
-                job.kw['id'] = self._getUniqueId();
+                job.kw['id'] = self._getUniqueId()
                 self._txMsg(job.cmd, **job.kw)
                 log(DETAIL, "Redirect to %s" % uri)
                 return
@@ -2409,7 +2451,6 @@ class FCPNode:
             job.callback('pending', msg)
             return
 
-
         # -----------------------------
         # handle FCPPluginMessage replies
 
@@ -2457,9 +2498,6 @@ class FCPNode:
             job.callback('successful', job.msgs)
             job._putResult(job.msgs)
 
-
-
-
             return
 
         if hdr == 'PeerNote':
@@ -2502,7 +2540,7 @@ class FCPNode:
             return
 
         if hdr == 'PersistentRequestRemoved':
-            if self.jobs.has_key(id):
+            if id in self.jobs:
                 del self.jobs[id]
             return
 
@@ -2602,54 +2640,53 @@ class FCPNode:
         perform the initial FCP protocol handshake
         """
         self._txMsg("ClientHello",
-                         Name=self.name,
-                         ExpectedVersion=expectedVersion)
+                    Name=self.name,
+                    ExpectedVersion=expectedVersion)
 
         resp = self._rxMsg()
-        if(resp.has_key("Version")):
-          self.nodeVersion = resp[ "Version" ];
-        if(resp.has_key("FCPVersion")):
-          self.nodeFCPVersion = resp[ "FCPVersion" ];
-        if(resp.has_key("Build")):
-          try:
-            self.nodeBuild = int( resp[ "Build" ] );
-          except Exception, msg:
-            pass;
-        else:
-          nodeVersionFields = self.nodeVersion.split( "," );
-          if( len( nodeVersionFields ) == 4 ):
+        if("Version" in resp):
+            self.nodeVersion = resp["Version"]
+        if("FCPVersion" in resp):
+            self.nodeFCPVersion = resp["FCPVersion"]
+        if("Build" in resp):
             try:
-              self.nodeBuild = int( nodeVersionFields[ 3 ] );
-            except Exception, msg:
-              pass;
-        if(resp.has_key("Revision")):
-          try:
-            self.nodeRevision = int( resp[ "Revision" ] );
-          except Exception, msg:
-            pass;
-        if(resp.has_key("ExtBuild")):
-          try:
-            self.nodeExtBuild = int( resp[ "ExtBuild" ] );
-          except Exception, msg:
-            pass;
-        if(resp.has_key("Revision")):
-          try:
-            self.nodeExtRevision = int( resp[ "ExtRevision" ] );
-          except Exception, msg:
-            pass;
-        if(resp.has_key("Testnet")):
-          if( "true" == resp[ "Testnet" ] ):
-            self.nodeIsTestnet = True;
-          else:
-            self.nodeIsTestnet = False;
-        if(resp.has_key("ConnectionIdentifier")):
-            self.connectionidentifier = resp[ "ConnectionIdentifier" ]
+                self.nodeBuild = int(resp["Build"])
+            except Exception as msg:
+                pass
+        else:
+            nodeVersionFields = self.nodeVersion.split(",")
+            if(len(nodeVersionFields) == 4):
+                try:
+                    self.nodeBuild = int(nodeVersionFields[3])
+                except Exception as msg:
+                    pass
+        if("Revision" in resp):
+            try:
+                self.nodeRevision = int(resp["Revision"])
+            except Exception as msg:
+                pass
+        if("ExtBuild" in resp):
+            try:
+                self.nodeExtBuild = int(resp["ExtBuild"])
+            except Exception as msg:
+                pass
+        if("Revision" in resp):
+            try:
+                self.nodeExtRevision = int(resp["ExtRevision"])
+            except Exception as msg:
+                pass
+        if("Testnet" in resp):
+            if("true" == resp["Testnet"]):
+                self.nodeIsTestnet = True
+            else:
+                self.nodeIsTestnet = False
+        if("ConnectionIdentifier" in resp):
+            self.connectionidentifier = resp["ConnectionIdentifier"]
         try:
             self.compressionCodecs = self._parseCompressionCodecs(
-                resp [ "CompressionCodecs" ])
+                resp["CompressionCodecs"])
         except (KeyError, IndexError, ValueError):
             pass
-
 
         return resp
 
@@ -2668,9 +2705,10 @@ class FCPNode:
                 for name, number
                 in [i.split("(")
                     for i in CompressionCodecsString.split(
-                            " - ")[1].split(", ")]]
+                    " - ")[1].split(", ")]]
     #@-node:_parseCompressionCodecs
     #@+node:defaultCompressionCodecsString
+
     def defaultCompressionCodecsString(self):
         """
         Turn the CompressionCodecs into a string accepted by the node.
@@ -2686,9 +2724,9 @@ class FCPNode:
         """
         Allocate a unique ID for a request
         """
-        timenum = int( time.time() * 1000000 );
-        randnum = random.randint( 0, timenum );
-        return "id" + str( timenum + randnum );
+        timenum = int(time.time() * 1000000)
+        randnum = random.randint(0, timenum)
+        return "id" + str(timenum + randnum)
 
     #@-node:_getUniqueId
     #@+node:_txMsg
@@ -2712,7 +2750,7 @@ class FCPNode:
             log(DETAIL, "CLIENT: %s" % rawcmd)
             return
 
-        if kw.has_key("Data"):
+        if "Data" in kw:
             data = kw.pop("Data")
             sendEndMessage = False
         else:
@@ -2722,21 +2760,21 @@ class FCPNode:
         items = [msgType + "\n"]
         log(DETAIL, "CLIENT: %s" % msgType)
 
-        #print "CLIENT: %s" % msgType
+        # print "CLIENT: %s" % msgType
         for k, v in kw.items():
-            #print "CLIENT: %s=%s" % (k,v)
+            # print "CLIENT: %s=%s" % (k,v)
             line = k + "=" + str(v)
             items.append(line + "\n")
             log(DETAIL, "CLIENT: %s" % line)
 
-        if data != None:
+        if data is not None:
             items.append("DataLength=%d\n" % len(data))
             log(DETAIL, "CLIENT: DataLength=%d" % len(data))
             items.append("Data\n")
             log(DETAIL, "CLIENT: ...data...")
             items.append(data)
 
-        #print "sendEndMessage=%s" % sendEndMessage
+        # print "sendEndMessage=%s" % sendEndMessage
 
         if sendEndMessage:
             items.append("EndMessage\n")
@@ -2774,9 +2812,8 @@ class FCPNode:
                 remaining -= chunklen
                 if remaining > 0:
                     if n > 1:
-                        log(DEBUG,
-                            "wanted %s, got %s still need %s bytes" % (n, chunklen, remaining)
-                            )
+                        log(DEBUG, "wanted %s, got %s still need %s bytes" %
+                            (n, chunklen, remaining))
                     pass
             buf = "".join(chunks)
             return buf
@@ -2863,8 +2900,8 @@ class FCPNode:
             self.logfile.write(msg)
             self.logfile.flush()
         if(None != self.logfunc):
-            while( msg.endswith("\n") ):
-                msg = msg[ : -1 ]
+            while(msg.endswith("\n")):
+                msg = msg[: -1]
             msglines = msg.split("\n")
             for msgline in msglines:
                 self.logfunc(msgline)
@@ -2902,6 +2939,7 @@ class JobTicket:
     """
     #@    @+others
     #@+node:__init__
+
     def __init__(self, node, id, cmd, kw, **opts):
         """
         You should never instantiate a JobTicket object yourself
@@ -2918,7 +2956,7 @@ class JobTicket:
 
         # find out if persistent
         if (kw.get("Persistent", "connection") != "connection" or
-            kw.get("PersistenceType", "connection") != "connection"):
+                kw.get("PersistenceType", "connection") != "connection"):
             self.isPersistent = True
         else:
             self.isPersistent = False
@@ -2936,12 +2974,12 @@ class JobTicket:
         if callback:
             self.callback = callback
 
-        self.timeout = int(kw.pop('timeout', 86400*365))
+        self.timeout = int(kw.pop('timeout', 86400 * 365))
         self.timeQueued = int(time.time())
         self.timeSent = None
 
         self.lock = threading.Lock()
-        #print "** JobTicket.__init__: lock=%s" % self.lock
+        # print "** JobTicket.__init__: lock=%s" % self.lock
 
         self.lock.acquire()
         self.result = None
@@ -2955,7 +2993,7 @@ class JobTicket:
         """
         Returns True if the job has been completed
         """
-        return self.result != None
+        return self.result is not None
 
     #@-node:isComplete
     #@+node:wait
@@ -2988,15 +3026,16 @@ class JobTicket:
             if elapsed < timeout:
                 # yep, patience remains
                 time.sleep(_pollInterval)
-                log(DEBUG, "wait:%s:%s: job not dispatched, timeout in %ss" % \
-                     (self.cmd, self.id, timeout-elapsed))
+                log(DEBUG, "wait:%s:%s: job not dispatched, timeout in %ss" %
+                    (self.cmd, self.id, timeout - elapsed))
                 continue
 
             # no - timed out waiting for job to be sent to node
-            log(DEBUG, "wait:%s:%s: timeout on send command" % (self.cmd, self.id))
+            log(DEBUG, "wait:%s:%s: timeout on send command" %
+                (self.cmd, self.id))
             raise FCPSendTimeout(
-                    header="Command '%s' took too long to be sent to node" % self.cmd
-                    )
+                header="Command '%s' took too long to be sent to node" %
+                self.cmd)
 
         log(DEBUG, "wait:%s:%s: job now dispatched" % (self.cmd, self.id))
 
@@ -3010,18 +3049,19 @@ class JobTicket:
                 # yep, patience remains
                 time.sleep(_pollInterval)
 
-                #print "** lock=%s" % self.lock
+                # print "** lock=%s" % self.lock
 
                 if timeout < ONE_YEAR:
-                    log(DEBUG, "wait:%s:%s: awaiting node response, timeout in %ss" % \
-                         (self.cmd, self.id, timeout-elapsed))
+                    log(DEBUG, "wait:%s:%s: awaiting node response, timeout in %ss" %
+                        (self.cmd, self.id, timeout - elapsed))
                 continue
 
             # no - timed out waiting for node to respond
-            log(DEBUG, "wait:%s:%s: timeout on node response" % (self.cmd, self.id))
+            log(DEBUG, "wait:%s:%s: timeout on node response" %
+                (self.cmd, self.id))
             raise FCPNodeTimeout(
-                    header="Command '%s' took too long for node response" % self.cmd
-                    )
+                header="Command '%s' took too long for node response" %
+                self.cmd)
 
         log(DEBUG, "wait:%s:%s: job complete" % (self.cmd, self.id))
 
@@ -3108,19 +3148,19 @@ class JobTicket:
             except:
                 pass
 
-        #print "** job: lock=%s" % self.lock
+        # print "** job: lock=%s" % self.lock
 
         try:
             self.lock.release()
         except:
             pass
 
-        #print "** job: lock released"
+        # print "** job: lock released"
 
     #@-node:_putResult
     #@+node:__repr__
     def __repr__(self):
-        if self.kw.has_key("URI"):
+        if "URI" in self.kw:
             uri = " URI=%s" % self.kw['URI']
         else:
             uri = ""
@@ -3133,7 +3173,8 @@ class JobTicket:
         if level > self.verbosity:
             return
 
-        if not msg.endswith("\n"): msg += "\n"
+        if not msg.endswith("\n"):
+            msg += "\n"
 
         sys.stdout.write(msg)
         sys.stdout.flush()
@@ -3145,6 +3186,8 @@ class JobTicket:
 #@+node:util funcs
 #@+others
 #@+node:toBool
+
+
 def toBool(arg):
     try:
         arg = int(arg)
@@ -3166,6 +3209,8 @@ def toBool(arg):
 
 #@-node:toBool
 #@+node:readdir
+
+
 def readdir(dirpath, prefix='', gethashes=False):
     """
     Reads a directory, returning a sequence of file dicts.
@@ -3205,39 +3250,41 @@ def readdir(dirpath, prefix='', gethashes=False):
     True
     """
 
-    #set_trace()
-    #print "dirpath=%s, prefix='%s'" % (dirpath, prefix)
+    # set_trace()
+    # print "dirpath=%s, prefix='%s'" % (dirpath, prefix)
     entries = []
     for f in os.listdir(dirpath):
         relpath = prefix + f
         fullpath = os.path.join(dirpath, f)
         if f == '.freesiterc' or f.endswith("~"):
             continue
-        if os.path.isdir(fullpath) \
-        or os.path.islink(fullpath) and os.path.isdir(os.path.realpath(fullpath)):
+        if os.path.isdir(fullpath) or os.path.islink(
+                fullpath) and os.path.isdir(os.path.realpath(fullpath)):
             entries.extend(
                 readdir(
                     os.path.join(dirpath, f),
                     relpath + os.path.sep,
                     gethashes
-                    )
                 )
+            )
         else:
             #entries[relpath] = {'mimetype':'blah/shit', 'fullpath':dirpath+"/"+relpath}
             fullpath = os.path.join(dirpath, f)
-            entry = {'relpath' :relpath,
-                     'fullpath':fullpath,
-                     'mimetype':guessMimetype(f)
+            entry = {'relpath': relpath,
+                     'fullpath': fullpath,
+                     'mimetype': guessMimetype(f)
                      }
             if gethashes:
                 entry['hash'] = hashFile(fullpath)
             entries.append(entry)
-    entries.sort(lambda f1,f2: cmp(f1['relpath'], f2['relpath']))
+    entries.sort(lambda f1, f2: cmp(f1['relpath'], f2['relpath']))
 
     return entries
 
 #@-node:readdir
 #@+node:hashFile
+
+
 def hashFile(path):
     """
     returns an SHA(1) hash of a file's contents
@@ -3250,6 +3297,7 @@ def hashFile(path):
     """
     raw = file(path, "rb").read()
     return hashlib.sha1(raw).hexdigest()
+
 
 def sha256dda(nodehelloid, identifier, path=None):
     """
@@ -3266,6 +3314,8 @@ def sha256dda(nodehelloid, identifier, path=None):
 
 #@-node:hashFile
 #@+node:guessMimetype
+
+
 def guessMimetype(filename):
     """
     Returns a guess of a mimetype based on a filename's extension
@@ -3277,16 +3327,19 @@ def guessMimetype(filename):
         m = mimetypes.guess_type(filename, False)[0]
     except:
         m = None
-    if m == "audio/mpegurl": # disallowed mime type by FF
+    if m == "audio/mpegurl":  # disallowed mime type by FF
         m = "audio/x-mpegurl"
-    if m is None: # either an exception or a genuine None
-        # FIXME: log(INFO, "Could not find mimetype for filename %s" % filename)
+    if m is None:  # either an exception or a genuine None
+        # FIXME: log(INFO, "Could not find mimetype for filename %s" %
+        # filename)
         m = "application/octet-stream"
     return m
 
 
 _re_slugify = re.compile('[^\w\s\.-]', re.UNICODE)
 _re_slugify_multidashes = re.compile('[-\s]+', re.UNICODE)
+
+
 def toUrlsafe(filename):
     """
     Make a filename url-safe, keeping only the basename and killing all
@@ -3295,8 +3348,13 @@ def toUrlsafe(filename):
     :returns: urlsafe basename of the file as string.
     """
 
-    filename = unicode(os.path.basename(filename), encoding="utf-8", errors="ignore")
-    filename = unicodedata.normalize('NFKD', filename).encode("ascii", "ignore")
+    filename = unicode(
+        os.path.basename(filename),
+        encoding="utf-8",
+        errors="ignore")
+    filename = unicodedata.normalize(
+        'NFKD', filename).encode(
+        "ascii", "ignore")
     filename = unicode(_re_slugify.sub('', filename).strip())
     filename = _re_slugify_multidashes.sub('-', filename)
     return str(filename)
@@ -3344,6 +3402,8 @@ def uriIsPrivate(uri):
 
 #@-node:uriIsPrivate
 #@+node:parseTime
+
+
 def parseTime(t):
     """
     Parses a time value, recognising suffices like 'm' for minutes,
@@ -3364,9 +3424,15 @@ def parseTime(t):
 
     t = t.strip()
     if not t:
-        raise Exception("Invalid time value '%s'"%  t)
+        raise Exception("Invalid time value '%s'" % t)
 
-    endings = {'s':1, 'm':60, 'h':3600, 'd':86400, 'w':86400*7, 'M':86400*30}
+    endings = {
+        's': 1,
+        'm': 60,
+        'h': 3600,
+        'd': 86400,
+        'w': 86400 * 7,
+        'M': 86400 * 30}
 
     lastchar = t[-1]
 
@@ -3383,6 +3449,8 @@ def parseTime(t):
 # functions to encode/decode base64, freenet alphabet
 #@+others
 #@+node:base64encode
+
+
 def base64encode(raw):
     """
     Encodes a string to base64, using the Freenet alphabet
@@ -3400,6 +3468,8 @@ def base64encode(raw):
 
 #@-node:base64encode
 #@+node:base64decode
+
+
 def base64decode(enc):
     """
     Decodes a freenet-encoded base64 string back to a binary string
@@ -3437,7 +3507,7 @@ def _base30hex(integer):
     base30 = "0123456789abcdefghijklmnopqrst"
     b30 = []
     while integer:
-        b30.append(base30[integer%30])
+        b30.append(base30[integer % 30])
         integer = int(integer / 30)
     return "".join(reversed(b30))
 
@@ -3446,7 +3516,7 @@ def _test():
     import doctest
     tests = doctest.testmod()
     if tests.failed:
-        return "☹"*tests.failed
+        return "☹" * tests.failed
     return "^_^ (" + _base30hex(tests.attempted) + ")"
 
 

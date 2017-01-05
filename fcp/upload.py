@@ -10,7 +10,11 @@ It is adapted from put.py, just with nicer defaults and feedback.
 
 #@+others
 #@+node:imports
-import sys, os, getopt, traceback, mimetypes
+import sys
+import os
+import getopt
+import traceback
+import mimetypes
 
 import node
 
@@ -20,18 +24,22 @@ progname = sys.argv[0]
 
 #@-node:globals
 #@+node:usage
+
+
 def usage(msg=None, ret=1):
     """
     Prints usage message then exits
     """
     if msg:
-        sys.stderr.write(msg+"\n")
+        sys.stderr.write(msg + "\n")
     sys.stderr.write("Usage: %s [options] key_uri [filename]\n" % progname)
     sys.stderr.write("Type '%s -h' for help\n" % progname)
     sys.exit(ret)
 
 #@-node:usage
 #@+node:help
+
+
 def help():
     """
     print help options, then exit
@@ -104,33 +112,33 @@ def main():
     wait = False
 
     opts = {
-            "Verbosity" : 0,
-            "persistence" : "forever",
-            "async" : True,
-            "priority" : 3,
-            "Global": "true",
-            "MaxRetries" : -1,
-           }
+        "Verbosity": 0,
+        "persistence": "forever",
+        "async": True,
+        "priority": 3,
+        "Global": "true",
+        "MaxRetries": -1,
+    }
 
     # process command line switches
     try:
         cmdopts, args = getopt.getopt(
             sys.argv[1:],
             "?hvH:P:m:gcdp:wr:et:V",
-            ["help", "verbose", "fcpHost=", "fcpPort=", "mimetype=", "global","compress","disk",
+            ["help", "verbose", "fcpHost=", "fcpPort=", "mimetype=", "global", "compress", "disk",
              "persistence=", "wait",
              "priority=", "realtime", "timeout=", "version",
              ]
-            )
+        )
     except getopt.GetoptError:
         # print help information and exit:
         usage()
         sys.exit(2)
     output = None
     verbose = False
-    #print cmdopts
+    # print cmdopts
 
-    makeDDARequest=False
+    makeDDARequest = False
     opts['nocompress'] = True
 
     for o, a in cmdopts:
@@ -165,9 +173,8 @@ def main():
         elif o in ("-c", "--compress"):
             opts['nocompress'] = False
 
-        elif o in ("-d","--disk"):
-            makeDDARequest=True
-
+        elif o in ("-d", "--disk"):
+            makeDDARequest = True
 
         elif o in ("-p", "--persistence"):
             if a not in ("connection", "reboot", "forever"):
@@ -211,18 +218,18 @@ def main():
         uri = args[0]
         if not uri.startswith("freenet:"):
             uri = "freenet:" + uri
-        if not uri[len("freenet:"):len("freenet:")+3] in keytypes:
-            print uri, uri[len("freenet:"):len("freenet:")+4]
+        if not uri[len("freenet:"):len("freenet:") + 3] in keytypes:
+            print uri, uri[len("freenet:"):len("freenet:") + 4]
             usage("The first argument must be a key. Example: CHK@/<filename>")
     else:
         # if no infile is given, automatically upload to a CHK key.
         infile = args[0]
         uri = "freenet:CHK@/" + node.toUrlsafe(infile)
 
-    # if we got an infile, but the key does not have the filename, use that filename for the uri.
+    # if we got an infile, but the key does not have the filename, use that
+    # filename for the uri.
     if infile and uri[-2:] == "@/" and uri[:3] in keytypes:
         uri += node.toUrlsafe(infile)
-
 
     # figure out a mimetype if none present
     if infile and not mimetype:
@@ -240,7 +247,7 @@ def main():
     # try to create the node
     try:
         n = node.FCPNode(host=fcpHost, port=fcpPort, verbosity=verbosity,
-                        logfile=sys.stderr)
+                         logfile=sys.stderr)
     except:
         if verbose:
             traceback.print_exc(file=sys.stderr)
@@ -258,17 +265,21 @@ def main():
             ddareq["Directory"] = os.path.dirname(ddafile)
             ddareq["WantReadDirectory"] = True
             ddareq["WantWriteDirectory"] = False
-            print "Absolute filepath used for node direct disk access :",ddareq["Directory"]
-            print "File to insert :",os.path.basename(ddafile)
+            print "Absolute filepath used for node direct disk access :", ddareq["Directory"]
+            print "File to insert :", os.path.basename(ddafile)
             TestDDARequest = n.testDDA(**ddareq)
 
             if TestDDARequest:
                 opts["file"] = ddafile
-                putres = n.put(uri,**opts)
+                putres = n.put(uri, **opts)
             else:
-                sys.stderr.write("%s: disk access failed to insert file %s fallback to direct\n" % (progname,ddafile) )
+                sys.stderr.write(
+                    "%s: disk access failed to insert file %s fallback to direct\n" %
+                    (progname, ddafile))
         else:
-            sys.stderr.write("%s: disk access needs a disk filename\n" % progname )
+            sys.stderr.write(
+                "%s: disk access needs a disk filename\n" %
+                progname)
 
     # try to insert the key using "direct" way if dda has failed
     if not TestDDARequest:
@@ -283,8 +294,9 @@ def main():
                 usage("Failed to read input from file %s" % repr(infile))
 
         try:
-            #print "opts=%s" % str(opts)
-            # give it the file anyway: Put is more intelligent than this script.
+            # print "opts=%s" % str(opts)
+            # give it the file anyway: Put is more intelligent than this
+            # script.
             opts["data"] = data
             if infile:
                 opts["file"] = infile
@@ -298,13 +310,15 @@ def main():
                 opts["realtime"] = True
                 opts["persistence"] = "connection"
                 opts["Global"] = False
-                freenet_uri = n.put(uri,**opts)
+                freenet_uri = n.put(uri, **opts)
 
         except:
             if verbose:
                 traceback.print_exc(file=sys.stderr)
             n.shutdown()
-            sys.stderr.write("%s: Failed to insert key %s\n" % (progname, repr(uri)))
+            sys.stderr.write(
+                "%s: Failed to insert key %s\n" %
+                (progname, repr(uri)))
             sys.exit(1)
 
         if not wait:

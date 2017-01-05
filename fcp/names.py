@@ -6,7 +6,12 @@ Perform namesite operations
 
 #@+others
 #@+node:imports
-import sys, os, getopt, traceback, mimetypes, time
+import sys
+import os
+import getopt
+import traceback
+import mimetypes
+import time
 
 import node
 
@@ -16,13 +21,15 @@ progname = sys.argv[0]
 
 #@-node:globals
 #@+node:class NamesMgr
+
+
 class NamesMgr:
     """
     """
     #@    @+others
     #@+node:synonyms
-    synonyms = {"addservice" : "newservice",
-                "listservice" : "listservices",
+    synonyms = {"addservice": "newservice",
+                "listservice": "listservices",
                 }
 
     #@-node:synonyms
@@ -41,11 +48,10 @@ class NamesMgr:
         """
         cmd = self.synonyms.get(cmd, cmd)
 
-        method = getattr(self, "cmd_"+cmd, None)
+        method = getattr(self, "cmd_" + cmd, None)
         if not method:
             usage("unrecognised command '%s'" % cmd)
         return method(*args)
-
 
     #@-node:execute
     #@+node:cmd_help
@@ -60,7 +66,7 @@ class NamesMgr:
         """
         Creates a new local name service
         """
-        #print "cmd_newservice %s" % repr(args)
+        # print "cmd_newservice %s" % repr(args)
 
         nargs = len(args)
 
@@ -89,7 +95,7 @@ class NamesMgr:
 
         Remove local service <name> and deletes its records
         """
-        #print "cmd_delservice %s" % repr(args)
+        # print "cmd_delservice %s" % repr(args)
 
         nargs = len(args)
 
@@ -124,7 +130,7 @@ class NamesMgr:
 
         for rec in self.node.namesiteLocals:
             if rec['name'] == name:
-                for k,v in rec['cache'].items():
+                for k, v in rec['cache'].items():
                     print "%s %s" % (k, v)
 
     #@-node:cmd_dumpservice
@@ -135,7 +141,7 @@ class NamesMgr:
 
         Adds a peer name service
         """
-        #print "cmd_addpeer %s" % repr(args)
+        # print "cmd_addpeer %s" % repr(args)
 
         nargs = len(args)
 
@@ -154,7 +160,7 @@ class NamesMgr:
 
         Remove peer name service <name>
         """
-        #print "cmd_delpeer %s" % repr(args)
+        # print "cmd_delpeer %s" % repr(args)
 
         nargs = len(args)
 
@@ -182,7 +188,7 @@ class NamesMgr:
 
         Add to local service <service> a record mapping <sitename> to <uri>
         """
-        #print "cmd_addrecord %s" % repr(args)
+        # print "cmd_addrecord %s" % repr(args)
 
         nargs = len(args)
         if nargs != 3:
@@ -200,7 +206,7 @@ class NamesMgr:
 
         Remove from local service <service> the record for name <sitename>
         """
-        #print "cmd_delrecord %s" % repr(args)
+        # print "cmd_delrecord %s" % repr(args)
 
         nargs = len(args)
         if nargs != 2:
@@ -230,7 +236,7 @@ class NamesMgr:
         if not rec:
             return
 
-        for domain,uri in rec['cache'].items():
+        for domain, uri in rec['cache'].items():
             # reinsert each record
 
             # determine the insert uri
@@ -246,7 +252,7 @@ class NamesMgr:
                 Global=True,
                 priority=0,
                 async=True,
-                )
+            )
 
         self.node.refreshPersistentRequests()
 
@@ -276,7 +282,7 @@ class NamesMgr:
         nfailed = 0
         nincorrect = 0
 
-        for domain,uri in rec['cache'].items():
+        for domain, uri in rec['cache'].items():
 
             ntotal += 1
 
@@ -288,7 +294,8 @@ class NamesMgr:
             print ("Trying to retrieve record %s..." % domain),
 
             try:
-                mimetype, data = recUri = self.node.get(localPubUri, priority=0)
+                mimetype, data = recUri = self.node.get(
+                    localPubUri, priority=0)
                 if data == uri:
                     print "  successful!"
                     nsuccessful += 1
@@ -300,7 +307,7 @@ class NamesMgr:
                 nfailed += 1
 
         print "Result: total=%s successful=%s failed=%s" % (
-            ntotal, nsuccessful, nfailed+nincorrect)
+            ntotal, nsuccessful, nfailed + nincorrect)
 
     #@-node:cmd_verifyservice
     #@+node:cmd_lookup
@@ -310,7 +317,7 @@ class NamesMgr:
 
         look up <name>, and print its target uri
         """
-        #print "cmd_lookup %s" % repr(args)
+        # print "cmd_lookup %s" % repr(args)
 
         if len(args) != 1:
             usage("Syntax: lookup <domainname>")
@@ -328,23 +335,27 @@ class NamesMgr:
 
 #@-node:class NamesMgr
 #@+node:usage
+
+
 def usage(msg=None, ret=1):
     """
     Prints usage message then exits
     """
     if msg:
-        sys.stderr.write(msg+"\n")
+        sys.stderr.write(msg + "\n")
     sys.stderr.write("Usage: %s [options]\n" % progname)
     sys.stderr.write("Type '%s -h' for help\n" % progname)
     sys.exit(ret)
 
 #@-node:usage
 #@+node:help
+
+
 def help():
     """
     print help options, then exit
     """
-    print "%s: operate on pyFreenet 'namesites'"  % progname
+    print "%s: operate on pyFreenet 'namesites'" % progname
     print
     print "Usage: %s [options]" % progname
     print
@@ -397,6 +408,8 @@ def help():
 
 #@-node:help
 #@+node:main
+
+
 def main():
     """
     Front end for fcpget utility
@@ -410,8 +423,8 @@ def main():
     cfgfile = None
 
     opts = {
-            "Verbosity" : 0,
-            }
+        "Verbosity": 0,
+    }
 
     # process command line switches
     try:
@@ -421,14 +434,14 @@ def main():
             ["help", "verbose", "fcpHost=", "fcpPort=", "version",
              "config-file=",
              ]
-            )
+        )
     except getopt.GetoptError:
         # print help information and exit:
         usage()
         sys.exit(2)
     output = None
     verbose = False
-    #print cmdopts
+    # print cmdopts
     for o, a in cmdopts:
 
         if o in ("-?", "-h", "--help"):

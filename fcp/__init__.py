@@ -1,8 +1,9 @@
-import sys, os
+import sys
+import os
 
 from node import FCPNode, JobTicket
 from node import ConnectionRefused, FCPException, FCPGetFailed, \
-                 FCPPutFailed, FCPProtocolError
+    FCPPutFailed, FCPProtocolError
 
 from node import SILENT, FATAL, CRITICAL, ERROR, INFO, DETAIL, DEBUG, NOISY
 
@@ -12,7 +13,13 @@ from node import SILENT, FATAL, CRITICAL, ERROR, INFO, DETAIL, DEBUG, NOISY
 #from invertkey import main as invertkey
 #from redirect import main as redirect
 #from names import main as names
-import upload, put, get, genkey, invertkey, redirect, names
+import upload
+import put
+import get
+import genkey
+import invertkey
+import redirect
+import names
 import fproxyproxy
 #import fproxyaddref
 import pseudopythonparser
@@ -35,5 +42,3 @@ if not isDoze:
     __all__.append('freenetfs')
 
 fcpVersion = "0.2.5"
-
-

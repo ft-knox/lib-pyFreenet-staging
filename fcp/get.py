@@ -9,7 +9,8 @@ This is the guts of the command-line front-end app fcpget
 #@+others
 #@+node:imports
 import argparse
-import sys, traceback
+import sys
+import traceback
 
 from . import node
 from .arguments import add_default_arguments
@@ -19,6 +20,7 @@ from .arguments import add_default_arguments
 progname = sys.argv[0]
 
 #@-node:globals
+
 
 def create_parser():
     '''
@@ -54,7 +56,7 @@ def create_parser():
         '--priority',
         '-r',
         type=int,
-        choices=range(0, 6+1),
+        choices=range(0, 6 + 1),
         default=3,
         help='Set the priority (0 highest, 6 lowest, default 3)',
     )
@@ -72,13 +74,14 @@ def create_parser():
         '--persistence',
         '-p',
         default='connection',
-        choices=('connection', 'reboot', 'forever'),
+        choices=(
+            'connection',
+            'reboot',
+            'forever'),
         help='Set the persistence type, one of "connection", "reboot" or "forever"',
     )
 
-
     return parser
-
 
 
 #@-node:help
@@ -91,8 +94,8 @@ def main(argv=sys.argv[1:]):
     verbosity = node.ERROR
 
     opts = {
-            "Verbosity" : 7,
-            }
+        "Verbosity": 7,
+    }
 
     verbose = False
 
@@ -109,18 +112,19 @@ def main(argv=sys.argv[1:]):
     opts['persistence'] = args.persistence
     opts['timeout'] = args.timeout
 
-
     # try to create the node
     try:
         fcp_node = node.FCPNode(host=args.fcphost,
-                         port=args.fcpport,
-                         Global=args.global_queue,
-                         verbosity=verbosity,
-                         logfile=sys.stderr)
+                                port=args.fcpport,
+                                Global=args.global_queue,
+                                verbosity=verbosity,
+                                logfile=sys.stderr)
     except:
         if verbose:
             traceback.print_exc(file=sys.stderr)
-        sys.stderr.write("Failed to connect to FCP service at %s:%s\n" % (args.fcphost, args.fcpport))
+        sys.stderr.write(
+            "Failed to connect to FCP service at %s:%s\n" %
+            (args.fcphost, args.fcpport))
         sys.exit(1)
 
     # try to retrieve the key
@@ -131,7 +135,9 @@ def main(argv=sys.argv[1:]):
     except:
         if verbose:
             traceback.print_exc(file=sys.stderr)
-        sys.stderr.write("%s: Failed to retrieve key %s\n" % (progname, repr(uri)))
+        sys.stderr.write(
+            "%s: Failed to retrieve key %s\n" %
+            (progname, repr(uri)))
         fcp_node.shutdown()
         sys.exit(1)
 
@@ -147,7 +153,10 @@ def main(argv=sys.argv[1:]):
         # save failed
         if verbose:
             traceback.print_exc(file=sys.stderr)
-        sys.stderr.write("Failed to write data to output file %s\n" % repr(args.outfile))
+        sys.stderr.write(
+            "Failed to write data to output file %s\n" %
+            repr(
+                args.outfile))
 
     # all done
     try:

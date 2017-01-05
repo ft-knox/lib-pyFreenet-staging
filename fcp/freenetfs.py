@@ -19,7 +19,11 @@ Requires:
 
 #@+others
 #@+node:imports
-import sys, os, time, stat, errno
+import sys
+import os
+import time
+import stat
+import errno
 from StringIO import StringIO
 import thread
 from threading import Lock
@@ -73,12 +77,14 @@ _no_node = 0
 # special filenames in freedisk toplevel dirs
 freediskSpecialFiles = [
     '.privatekey', '.publickey', '.cmd', '.status', ".passwd",
-    ]
+]
 
 showAllExceptions = False
 
 #@-node:globals
 #@+node:class ErrnoWrapper
+
+
 class ErrnoWrapper:
 
     def __init__(self, func):
@@ -86,12 +92,13 @@ class ErrnoWrapper:
 
     def __call__(self, *args, **kw):
         try:
-            return apply(self.func, args, kw)
-        except (IOError, OSError), detail:
+            return self.func(*args, **kw)
+        except (IOError, OSError) as detail:
             if showAllExceptions:
                 traceback.print_exc()
             # Sometimes this is an int, sometimes an instance...
-            if hasattr(detail, "errno"): detail = detail.errno
+            if hasattr(detail, "errno"):
+                detail = detail.errno
             return -detail
 
 
@@ -121,10 +128,10 @@ class FreenetBaseFS:
         "/keys/",
         "/usr/",
         "/cmds/",
-        ]
+    ]
 
     chrFiles = [
-        ]
+    ]
 
     #@-node:attribs
     #@+node:__init__
@@ -153,7 +160,7 @@ class FreenetBaseFS:
                   'verbosity',
                   'debug',
                   ]:
-            if kw.has_key(k):
+            if k in kw:
                 v = kw.pop(k)
                 try:
                     v = int(v)
@@ -167,10 +174,10 @@ class FreenetBaseFS:
 
         self.mountpoint = mountpoint
 
-        #if not self.config:
+        # if not self.config:
         #    raise Exception("Missing 'config=filename.conf' argument")
 
-        #self.loadConfig()
+        # self.loadConfig()
         self.setupFiles()
         self.setupFreedisks()
 
@@ -208,7 +215,7 @@ class FreenetBaseFS:
         except:
             return "error\nInvalid command %s" % repr(cmd)
 
-        method = getattr(self, "cmd_"+cmd, None)
+        method = getattr(self, "cmd_" + cmd, None)
         if method:
             return method(*args)
         else:
@@ -231,7 +238,7 @@ class FreenetBaseFS:
             - uri (may be public or private)
             - password
         """
-        #print "mount: args=%s" % repr(args)
+        # print "mount: args=%s" % repr(args)
 
         try:
             name, uri, passwd = args
@@ -254,7 +261,7 @@ class FreenetBaseFS:
         arguments:
             - diskname
         """
-        #print "mount: args=%s" % repr(args)
+        # print "mount: args=%s" % repr(args)
 
         try:
             name = args[0]
@@ -275,7 +282,7 @@ class FreenetBaseFS:
         """
         Does an update of a freedisk from freenet
         """
-        #print "update: args=%s" % repr(args)
+        # print "update: args=%s" % repr(args)
 
         try:
             name = args[0]
@@ -320,17 +327,19 @@ class FreenetBaseFS:
     #@+node:chmod
     def chmod(self, path, mode):
 
-    	ret = os.chmod(path, mode)
+        ret = os.chmod(path, mode)
         self.log("chmod: path=%s mode=%s\n  => %s" % (path, mode, ret))
-    	return ret
+        return ret
 
     #@-node:chmod
     #@+node:chown
     def chown(self, path, user, group):
 
-    	ret = os.chown(path, user, group)
-        self.log("chmod: path=%s user=%s group=%s\n  => %s" % (path, user, group, ret))
-    	return ret
+        ret = os.chown(path, user, group)
+        self.log(
+            "chmod: path=%s user=%s group=%s\n  => %s" %
+            (path, user, group, ret))
+        return ret
 
     #@-node:chown
     #@+node:fsync
@@ -358,9 +367,9 @@ class FreenetBaseFS:
                 rec = self.addToCache(
                     path=path,
                     isreg=True,
-                    data=pubkey+"\n"+privkey+"\n",
-                    perm=0444,
-                    )
+                    data=pubkey + "\n" + privkey + "\n",
+                    perm=0o444,
+                )
 
                 #@-node:<<generate keypair>>
                 #@nl
@@ -380,13 +389,13 @@ class FreenetBaseFS:
                     rec = self.addToCache(
                         path=path,
                         isreg=True,
-                        perm=0644,
+                        perm=0o644,
                         data=data,
-                        )
+                    )
 
                 except:
                     traceback.print_exc()
-                    #print "ehhh?? path=%s" % path
+                    # print "ehhh?? path=%s" % path
                     raise IOError(errno.ENOENT, path)
 
                 #@-node:<<retrieve/cache key>>
@@ -402,7 +411,8 @@ class FreenetBaseFS:
 
                 result = self.executeCommand(cmd)
 
-                rec = self.addToCache(path=path, isreg=True, data=result, perm=0644)
+                rec = self.addToCache(
+                    path=path, isreg=True, data=result, perm=0o644)
 
                 #@-node:<<base64 command>>
                 #@nl
@@ -431,17 +441,17 @@ class FreenetBaseFS:
         rec = self.files.get(path, None)
 
         if rec:
-            files = [os.path.split(child.path)[-1] for child in rec.children]
-            files.sort()
+            files = sorted([os.path.split(child.path)[-1]
+                            for child in rec.children])
             if rec.isdir:
-                if  path != "/":
+                if path != "/":
                     files.insert(0, "..")
                 files.insert(0, ".")
         else:
             self.log("Hit main fs for %s" % path)
             files = os.listdir(path)
 
-        ret = map(lambda x: (x,0), files)
+        ret = map(lambda x: (x, 0), files)
 
         self.log("getdir: path=%s\n  => %s" % (path, ret))
         return ret
@@ -452,9 +462,9 @@ class FreenetBaseFS:
 
         raise IOError(errno.EPERM, path)
 
-    	ret = os.link(path, path1)
+        ret = os.link(path, path1)
         self.log("link: path=%s path1=%s\n  => %s" % (path, path1, ret))
-    	return ret
+        return ret
 
     #@-node:link
     #@+node:mkdir
@@ -463,7 +473,7 @@ class FreenetBaseFS:
         self.log("mkdir: path=%s mode=%s" % (path, mode))
 
         # barf if directory exists
-        if self.files.has_key(path):
+        if path in self.files:
             raise IOError(errno.EEXIST, path)
 
         # barf if happening outside /usr/
@@ -476,12 +486,12 @@ class FreenetBaseFS:
             # creating a new freedisk
 
             # create the directory record
-            rec = self.addToCache(path=path, isdir=True, perm=0555)
+            rec = self.addToCache(path=path, isdir=True, perm=0o555)
 
             # create the pseudo-files within it
             for name in freediskSpecialFiles:
                 subpath = os.path.join(path, name)
-                rec = self.addToCache(path=subpath, isreg=True, perm=0644)
+                rec = self.addToCache(path=subpath, isreg=True, perm=0o644)
                 if name == '.status':
                     rec.data = "idle"
 
@@ -494,7 +504,7 @@ class FreenetBaseFS:
             # barf if no write permission in dir
             diskPath = "/".join(path.split("/")[:3])
             diskRec = self.files.get(diskPath, None)
-            #if not diskRec:
+            # if not diskRec:
             #    self.log("mkdir: diskPath=%s" % diskPath)
             #    raise IOError(errno.ENOENT, path)
             if diskRec and not diskRec.canwrite:
@@ -502,7 +512,7 @@ class FreenetBaseFS:
                 raise IOError(errno.EPERM, path)
 
             # ok to create
-            self.addToCache(path=path, isdir=True, perm=0755)
+            self.addToCache(path=path, isdir=True, perm=0o755)
 
         return 0
 
@@ -512,24 +522,24 @@ class FreenetBaseFS:
         """ Python has no os.mknod, so we can only do some things """
 
         if path == "/":
-            #return -EINVAL
+            # return -EINVAL
             raise IOError(errno.EEXIST, path)
 
         parentPath = os.path.split(path)[0]
         if parentPath in ['/', '/usr']:
-            #return -EINVAL
+            # return -EINVAL
             raise IOError(errno.EPERM, path)
 
         # start key write, if needed
         if parentPath == "/put":
 
             # see if an existing file
-            if self.files.has_key(path):
+            if path in self.files:
                 raise IOError(errno.EEXIST, path)
 
             rec = self.addToCache(
                 path=path, isreg=True, iswriting=True,
-                perm=0644)
+                perm=0o644)
             ret = 0
 
         elif path.startswith("/usr/"):
@@ -538,19 +548,19 @@ class FreenetBaseFS:
             # barf if no write permission in dir
             diskPath = "/".join(path.split("/")[:3])
             diskRec = self.files.get(diskPath, None)
-            #if not diskRec:
+            # if not diskRec:
             #    raise IOError(errno.ENOENT, path)
             if diskRec and not diskRec.canwrite:
                 self.log("mknod: diskPath=%s" % diskPath)
                 raise IOError(errno.EPERM, path)
 
             # create the record
-            rec = self.addToCache(path=path, isreg=True, perm=0644,
+            rec = self.addToCache(path=path, isreg=True, perm=0o644,
                                   iswriting=True, haschanged=True)
             ret = 0
 
             # fall back on host os
-            #if S_ISREG(mode):
+            # if S_ISREG(mode):
             #    file(path, "w").close()
             #    ret = 0
 
@@ -559,7 +569,7 @@ class FreenetBaseFS:
             raise IOError(errno.EPERM, path)
 
         self.log("mknod: path=%s mode=0%o dev=%s\n  => %s" % (
-                    path, mode, dev, ret))
+            path, mode, dev, ret))
 
         return ret
 
@@ -605,8 +615,8 @@ class FreenetBaseFS:
             buf = rec.read(length)
 
             self.log("read: path=%s length=%s offset=%s\n => %s" % (
-                                        path, length, offset, len(buf)))
-            #print repr(buf)
+                path, length, offset, len(buf)))
+            # print repr(buf)
             return buf
 
         else:
@@ -616,7 +626,7 @@ class FreenetBaseFS:
             buf = f.read(length)
 
         self.log("read: path=%s length=%s offset=%s\n  => (%s bytes)" % (
-                                        path, length, offset, len(buf)))
+            path, length, offset, len(buf)))
 
         return buf
 
@@ -624,9 +634,9 @@ class FreenetBaseFS:
     #@+node:readlink
     def readlink(self, path):
 
-    	ret = os.readlink(path)
+        ret = os.readlink(path)
         self.log("readlink: path=%s\n  => %s" % (path, ret))
-    	return ret
+        return ret
 
     #@-node:readlink
     #@+node:release
@@ -640,7 +650,7 @@ class FreenetBaseFS:
 
         # ditch any encoded command files
         if path.startswith("/cmds/"):
-            #print "got file %s" % path
+            # print "got file %s" % path
             rec = self.files.get(path, None)
             if rec:
                 self.delFromCache(rec)
@@ -683,7 +693,7 @@ class FreenetBaseFS:
 
                     self.connectToNode()
 
-                    #print "FIXME: data=%s" % repr(data)
+                    # print "FIXME: data=%s" % repr(data)
 
                     if _no_node:
                         print "FIXME: not inserting"
@@ -691,9 +701,9 @@ class FreenetBaseFS:
                     else:
                         # perform the insert
                         getUri = self.node.put(
-                                    putUri,
-                                    data=data,
-                                    mimetype=mimetype)
+                            putUri,
+                            data=data,
+                            mimetype=mimetype)
 
                         # strip 'freenet:' prefix
                         if getUri.startswith("freenet:"):
@@ -705,17 +715,17 @@ class FreenetBaseFS:
 
                         # now cache the read-back
                         self.addToCache(
-                            path="/get/"+getUri,
+                            path="/get/" + getUri,
                             data=data,
-                            perm=0444,
+                            perm=0o444,
                             isreg=True,
-                            )
+                        )
 
                         # and adjust the written file to reveal read uri
                         rec.data = getUri
 
                     self.log("release: inserted %s as %s ok" % (
-                                uri, mimetype))
+                        uri, mimetype))
 
                 except:
                     traceback.print_exc()
@@ -747,7 +757,9 @@ class FreenetBaseFS:
                         parentPath = os.path.split(path)[0]
                         parentRec = self.files[parentPath]
                         parentRec.canwrite = True
-                        self.log("release: got privkey, mark dir %s read/write" % parentRec)
+                        self.log(
+                            "release: got privkey, mark dir %s read/write" %
+                            parentRec)
 
                     elif fileName == '.cmd':
                         # wrote a command
@@ -770,11 +782,11 @@ class FreenetBaseFS:
                 #@-node:<<write to freedisk>>
                 #@nl
 
-
         self.log("release: path=%s flags=%s" % (path, flags))
         return 0
     #@-node:release
     #@+node:rename
+
     def rename(self, path, path1):
 
         rec = self.files.get(path, None)
@@ -787,7 +799,7 @@ class FreenetBaseFS:
         ret = 0
 
         self.log("rename: path=%s path1=%s\n  => %s" % (path, path1, ret))
-    	return ret
+        return ret
 
     #@-node:rename
     #@+node:rmdir
@@ -825,7 +837,7 @@ class FreenetBaseFS:
 
             # and remove children
             for k in self.files.keys():
-                if k.startswith(path+"/"):
+                if k.startswith(path + "/"):
                     del self.files[k]
 
             return 0
@@ -842,7 +854,7 @@ class FreenetBaseFS:
 
         self.log("rmdir:   => %s" % ret)
 
-    	return ret
+        return ret
 
     #@-node:rmdir
     #@+node:statfs
@@ -874,9 +886,9 @@ class FreenetBaseFS:
 
         raise IOError(errno.EPERM, path)
 
-    	ret = os.symlink(path, path1)
+        ret = os.symlink(path, path1)
         self.log("symlink: path=%s path1=%s\n  => %s" % (path, path1, ret))
-    	return ret
+        return ret
 
     #@-node:symlink
     #@+node:truncate
@@ -917,8 +929,8 @@ class FreenetBaseFS:
 
         # remove existing file?
         if path.startswith("/get/") \
-        or path.startswith("/put/") \
-        or path.startswith("/keys/"):
+                or path.startswith("/put/") \
+                or path.startswith("/keys/"):
             rec = self.files.get(path, None)
             if not rec:
                 raise IOError(2, path)
@@ -961,15 +973,15 @@ class FreenetBaseFS:
 
         # fallback on host fs
         self.log("unlink:   => %s" % ret)
-    	return ret
+        return ret
 
     #@-node:unlink
     #@+node:utime
     def utime(self, path, times):
 
-    	ret = os.utime(path, times)
+        ret = os.utime(path, times)
         self.log("utime: path=%s times=%s\n  => %s" % (path, times, ret))
-    	return ret
+        return ret
 
     #@-node:utime
     #@+node:write
@@ -989,10 +1001,12 @@ class FreenetBaseFS:
             nwritten = f.write(buf)
             f.flush()
 
-        self.log("write: path=%s buf=[%s bytes] off=%s" % (path, len(buf), off))
+        self.log(
+            "write: path=%s buf=[%s bytes] off=%s" %
+            (path, len(buf), off))
 
-    	#return nwritten
-    	return dataLen
+        # return nwritten
+        return dataLen
 
     #@-node:write
     #@-others
@@ -1027,7 +1041,11 @@ class FreenetBaseFS:
         print "addDisk: name=%s uri=%s passwd=%s" % (name, uri, passwd)
 
         diskPath = "/usr/" + name
-        rec = self.addToCache(path=diskPath, isdir=True, perm=0755, canwrite=True)
+        rec = self.addToCache(
+            path=diskPath,
+            isdir=True,
+            perm=0o755,
+            canwrite=True)
         disk = Freedisk(rec)
         self.freedisks[name] = disk
 
@@ -1041,7 +1059,7 @@ class FreenetBaseFS:
         disk.privKey = privKey
         disk.pubKey = pubKey
 
-        #print "addDisk: done"
+        # print "addDisk: done"
 
     #@-node:addDisk
     #@+node:delDisk
@@ -1090,7 +1108,8 @@ class FreenetBaseFS:
 
         # process the private key to needed format
         privKey = privKey.split("freenet:")[-1]
-        privKey = privKey.replace("SSK@", "USK@").split("/")[0] + "/" + name + "/0"
+        privKey = privKey.replace("SSK@", "USK@").split(
+            "/")[0] + "/" + name + "/0"
 
         self.log("commit: privKey=%s" % privKey)
 
@@ -1103,13 +1122,13 @@ class FreenetBaseFS:
         fileRecs = []
         for f in self.files.keys():
             # is file/dir within the freedisk?
-            if f.startswith(rootPath+"/"):
+            if f.startswith(rootPath + "/"):
                 # yes, get its record
                 fileRec = self.files[f]
 
                 # is it a file, and not a special file?
                 if fileRec.isfile \
-                and (os.path.split(f)[1] not in freediskSpecialFiles):
+                        and (os.path.split(f)[1] not in freediskSpecialFiles):
                     # yes, grab it
                     fileRecs.append(fileRec)
 
@@ -1158,7 +1177,7 @@ class FreenetBaseFS:
             "<td><b>Filename</b></td>",
             "<td><b>URI</b></td>",
             "</tr>",
-            ]
+        ]
         for rec in fileRecs:
             indexLines.append("<tr><td>%s</td><td>%s</td><td>%s</td></tr>" % (
                 rec.size, rec.path, rec.uri))
@@ -1171,18 +1190,18 @@ class FreenetBaseFS:
             data=manifest.toxml(),
             mimetype="text/xml",
             async=True,
-            )
+        )
 
-        #jobsRunning.append(manifestJob)
+        # jobsRunning.append(manifestJob)
         #manifestUri = manifestJob.wait()
-        #print "manifestUri=%s" % manifestUri
-        #time.sleep(6)
+        # print "manifestUri=%s" % manifestUri
+        # time.sleep(6)
 
         # the big insert/wait loop
         while jobsWaiting or jobsRunning:
             nWaiting = len(jobsWaiting)
             nRunning = len(jobsRunning)
-            self.log("commit: %s waiting, %s running" % (nWaiting,nRunning))
+            self.log("commit: %s waiting, %s running" % (nWaiting, nRunning))
 
             # launch jobs, if available, and if spare slots
             while len(jobsRunning) < maxJobs and jobsWaiting:
@@ -1263,7 +1282,8 @@ class FreenetBaseFS:
         pubKey = pubKey.split("freenet:")[-1]
 
         # process further
-        pubKey = privKey.replace("SSK@", "USK@").split("/")[0] + "/" + name + "/0"
+        pubKey = privKey.replace("SSK@", "USK@").split(
+            "/")[0] + "/" + name + "/0"
 
         self.log("update: pubKey=%s" % pubKey)
 
@@ -1283,6 +1303,7 @@ class FreenetBaseFS:
         """
     #@-node:getManifest
     #@+node:putManifest
+
     def putManifest(self, name):
         """
         Inserts a freedisk manifest into freenet
@@ -1321,7 +1342,7 @@ class FreenetBaseFS:
                 # it's a char file
                 #isChr = True
                 isReg = True
-                perm |= 0666
+                perm |= 0o666
                 size = 1024
             else:
                 # by default, it's a regular file
@@ -1329,10 +1350,10 @@ class FreenetBaseFS:
 
             # create permissions field
             if isDir:
-                perm |= 0755
+                perm |= 0o755
                 size = 2
             else:
-                perm |= 0444
+                perm |= 0o444
 
             # create record for this path
             self.addToCache(
@@ -1341,7 +1362,7 @@ class FreenetBaseFS:
                 size=size,
                 isdir=isDir, isreg=isReg, ischr=isChr,
                 issock=isSock, isfifo=isFifo,
-                )
+            )
 
     #@-node:setupFiles
     #@+node:connectToNode
@@ -1362,7 +1383,7 @@ class FreenetBaseFS:
                                     verbosity=self.verbosity)
         except:
             raise IOError(errno.EIO, "Failed to reach FCP service at %s:%s" % (
-                            self.fcpHost, self.fcpPort))
+                self.fcpHost, self.fcpPort))
 
         #self.log("pubkey=%s" % self.pubkey)
         #self.log("privkey=%s" % self.privkey)
@@ -1371,13 +1392,12 @@ class FreenetBaseFS:
     #@-node:connectToNode
     #@+node:mythread
     def mythread(self):
-
         """
         The beauty of the FUSE python implementation is that with the python interp
         running in foreground, you can have threads
         """
         self.log("mythread: started")
-        #while 1:
+        # while 1:
         #    time.sleep(120)
         #    print "mythread: ticking"
 
@@ -1394,17 +1414,17 @@ class FreenetBaseFS:
         Tries to 'cache' a given file/dir record, and
         adds it to parent dir
         """
-        if rec == None:
+        if rec is None:
             rec = FileRecord(self, **kw)
 
         path = rec.path
 
         # barf if file/dir already exists
-        if self.files.has_key(path):
+        if path in self.files:
             self.log("addToCache: already got %s !!!" % path)
             return
 
-        #print "path=%s" % path
+        # print "path=%s" % path
 
         # if not root, add to parent
         if path != '/':
@@ -1438,7 +1458,7 @@ class FreenetBaseFS:
 
         parentPath = os.path.split(path)[0]
 
-        if self.files.has_key(path):
+        if path in self.files:
             rec = self.files[path]
             del self.files[path]
             for child in rec.children:
@@ -1521,24 +1541,24 @@ class FreenetBaseFS:
 
         mode = info[stat.ST_MODE]
         return {
-            'isdir'  : stat.S_ISDIR(mode),
-            'ischr'  : stat.S_ISCHR(mode),
-            'isblk'  : stat.S_ISBLK(mode),
-            'isreg'  : stat.S_ISREG(mode),
-            'isfifo' : stat.S_ISFIFO(mode),
-            'islink'  : stat.S_ISLNK(mode),
-            'issock' : stat.S_ISSOCK(mode),
-            'mode'   : mode,
-            'inode'  : info[stat.ST_INO],
-            'dev'    : info[stat.ST_DEV],
-            'nlink'  : info[stat.ST_NLINK],
-            'uid'    : info[stat.ST_UID],
-            'gid'    : info[stat.ST_GID],
-            'size'   : info[stat.ST_SIZE],
-            'atime'  : info[stat.ST_ATIME],
-            'mtime'  : info[stat.ST_MTIME],
-            'ctime'  : info[stat.ST_CTIME],
-            }
+            'isdir': stat.S_ISDIR(mode),
+            'ischr': stat.S_ISCHR(mode),
+            'isblk': stat.S_ISBLK(mode),
+            'isreg': stat.S_ISREG(mode),
+            'isfifo': stat.S_ISFIFO(mode),
+            'islink': stat.S_ISLNK(mode),
+            'issock': stat.S_ISSOCK(mode),
+            'mode': mode,
+            'inode': info[stat.ST_INO],
+            'dev': info[stat.ST_DEV],
+            'nlink': info[stat.ST_NLINK],
+            'uid': info[stat.ST_UID],
+            'gid': info[stat.ST_GID],
+            'size': info[stat.ST_SIZE],
+            'atime': info[stat.ST_ATIME],
+            'mtime': info[stat.ST_MTIME],
+            'ctime': info[stat.ST_CTIME],
+        }
 
     #@-node:statToDict
     #@+node:getReadURI
@@ -1564,9 +1584,9 @@ class FreenetBaseFS:
     #@-node:getWriteURI
     #@+node:log
     def log(self, msg):
-        #if not quiet:
+        # if not quiet:
         #    print "freedisk:"+msg
-        file("/tmp/freedisk.log", "a").write(msg+"\n")
+        file("/tmp/freedisk.log", "a").write(msg + "\n")
 
     #@-node:log
     #@-others
@@ -1581,7 +1601,7 @@ class FreenetBaseFS:
         """
         returns a stat tuple for given path
         """
-        return FileRecord(mode=0700, path=path, isdir=True)
+        return FileRecord(mode=0o700, path=path, isdir=True)
 
     #@-node:__getDirStat
     #@+node:_loadConfig
@@ -1608,19 +1628,20 @@ class FreenetBaseFS:
 
         # mandate a pubkey
         try:
-            self.pubkey = opts['pubkey'].replace("SSK@", "USK@").split("/")[0] + "/"
+            self.pubkey = opts['pubkey'].replace(
+                "SSK@", "USK@").split("/")[0] + "/"
         except:
-            raise Exception("Config file %s: missing or invalid publickey" \
+            raise Exception("Config file %s: missing or invalid publickey"
                             % self.configfile)
 
         # accept optional privkey
-        if opts.has_key("privkey"):
+        if "privkey" in opts:
 
             try:
-                self.privkey = opts['privkey'].replace("SSK@",
-                                                     "USK@").split("/")[0] + "/"
+                self.privkey = opts['privkey'].replace(
+                    "SSK@", "USK@").split("/")[0] + "/"
             except:
-                raise Exception("Config file %s: invalid privkey" \
+                raise Exception("Config file %s: invalid privkey"
                                 % self.configfile)
 
         # mandate cachepath
@@ -1631,8 +1652,9 @@ class FreenetBaseFS:
                 os.makedirs(self.cachedir)
                 #raise hell
         except:
-            raise Exception("config file %s: missing or invalid cache directory" \
-                            % self.configfile)
+            raise Exception(
+                "config file %s: missing or invalid cache directory" %
+                self.configfile)
 
     #@-node:_loadConfig
     #@-others
@@ -1642,12 +1664,15 @@ class FreenetBaseFS:
 
 #@-node:class FreenetBaseFS
 #@+node:class Freedisk
+
+
 class Freedisk:
     """
     Encapsulates a freedisk
     """
     #@    @+others
     #@+node:__init__
+
     def __init__(self, rootrec):
 
         self.root = rootrec
@@ -1657,6 +1682,8 @@ class Freedisk:
 
 #@-node:class Freedisk
 #@+node:class FreenetFuseFS
+
+
 class FreenetFuseFS(FreenetBaseFS):
     """
     Interfaces with FUSE
@@ -1664,9 +1691,9 @@ class FreenetFuseFS(FreenetBaseFS):
     #@    @+others
     #@+node:attribs
     _attrs = ['getattr', 'readlink', 'getdir', 'mknod', 'mkdir',
-          'unlink', 'rmdir', 'symlink', 'rename', 'link', 'chmod',
-          'chown', 'truncate', 'utime', 'open', 'read', 'write', 'release',
-          'statfs', 'fsync']
+              'unlink', 'rmdir', 'symlink', 'rename', 'link', 'chmod',
+              'chown', 'truncate', 'utime', 'open', 'read', 'write', 'release',
+              'statfs', 'fsync']
 
     #@-node:attribs
     #@+node:run
@@ -1678,12 +1705,12 @@ class FreenetFuseFS(FreenetBaseFS):
              'multithreaded': self.multithreaded,
              }
 
-        #print "run: d=%s" % str(d)
+        # print "run: d=%s" % str(d)
 
         if self.debug:
             d['lopts'] = 'debug'
 
-        k=[]
+        k = []
         for opt in ['allow_other', 'kernel_cache']:
             if getattr(self, opt):
                 k.append(opt)
@@ -1691,7 +1718,7 @@ class FreenetFuseFS(FreenetBaseFS):
             d['kopts'] = ",".join(k)
 
         for a in self._attrs:
-            if hasattr(self,a):
+            if hasattr(self, a):
                 d[a] = ErrnoWrapper(getattr(self, a))
 
         #thread.start_new_thread(self.tickThread, ())
@@ -1725,6 +1752,8 @@ class FreenetFuseFS(FreenetBaseFS):
     #@-others
 #@-node:class FreenetFuseFS
 #@+node:class FileRecord
+
+
 class FileRecord(list):
     """
     Encapsulates the info for a file, and can
@@ -1760,7 +1789,7 @@ class FileRecord(list):
             size = statrec[stat.ST_SIZE]
         else:
             # no, fudge a new one
-            statrec = [0,0,0,0,0,0,0,0,0,0]
+            statrec = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
             dev = 0
             nlink = 1
             uid = myuid
@@ -1797,7 +1826,7 @@ class FileRecord(list):
         self.path = path
 
         # set up data stream
-        if kw.has_key("data"):
+        if "data" in kw:
             self.stream = StringIO(kw.pop('data'))
             self.hasdata = True
         else:
@@ -1823,8 +1852,8 @@ class FileRecord(list):
         mtime = kw.pop('mtime', now)
         ctime = kw.pop('ctime', now)
 
-        #print "statrec[stat.ST_MODE]=%s" % statrec[stat.ST_MODE]
-        #print "mode=%s" % mode
+        # print "statrec[stat.ST_MODE]=%s" % statrec[stat.ST_MODE]
+        # print "mode=%s" % mode
 
         statrec[stat.ST_MODE] |= mode
         statrec[stat.ST_INO] = inode
@@ -2010,7 +2039,7 @@ class FileRecord(list):
         self.children.append(rec)
         self.size += 1
 
-        #print "addChild: path=%s size=%s" % (self.path, self.size)
+        # print "addChild: path=%s size=%s" % (self.path, self.size)
 
     #@-node:addChild
     #@+node:delChild
@@ -2025,19 +2054,22 @@ class FileRecord(list):
         else:
             print "eh? trying to remove %s from %s" % (rec.path, self.path)
 
-        #print "delChild: path=%s size=%s" % (self.path, self.size)
+        # print "delChild: path=%s size=%s" % (self.path, self.size)
 
     #@-node:delChild
     #@-others
 
 #@-node:class FileRecord
 #@+node:class FreediskMgr
+
+
 class FreediskMgr:
     """
     Gateway for mirroring a local directory to/from freenet
     """
     #@    @+others
     #@+node:__init__
+
     def __init__(self, **kw):
         """
         Creates a freediskmgr object
@@ -2071,20 +2103,22 @@ class FreediskMgr:
 
 #@-node:class FreediskMgr
 #@+node:pathToInode
+
+
 def pathToInode(path):
     """
     Comes up with a unique inode number given a path
     """
     # try for existing known path/inode
     inode = inodes.get(path, None)
-    if inode != None:
+    if inode is not None:
         return inode
 
     # try hashing the path to 32bit
     inode = int(md5(path).hexdigest()[:7], 16)
 
     # and ensure it's unique
-    while inodes.has_key(inode):
+    while inode in inodes:
         inode += 1
 
     # register it
@@ -2095,11 +2129,15 @@ def pathToInode(path):
 
 #@-node:pathToInode
 #@+node:timeNow
+
+
 def timeNow():
-    return int(time.time()) & 0xffffffffL
+    return int(time.time()) & 0xffffffff
 
 #@-node:timeNow
 #@+node:usage
+
+
 def usage(msg, ret=1):
 
     print "Usage: %s mountpoint -o args" % progname
@@ -2108,6 +2146,8 @@ def usage(msg, ret=1):
 
 #@-node:usage
 #@+node:main
+
+
 def main():
 
     kw = {}
@@ -2128,7 +2168,6 @@ def main():
     kw['multithreaded'] = True
     #kw['multithreaded'] = False
     print "main: kw=%s" % str(kw)
-
 
     if os.fork() == 0:
         server = FreenetFuseFS(mountpoint, *args, **kw)

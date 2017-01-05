@@ -20,6 +20,8 @@ from .arguments import add_default_arguments
 
 #@-node:globals
 #@+node:usage
+
+
 def create_parser():
     '''
     Creates an argparse parser.
@@ -39,6 +41,8 @@ def create_parser():
 
 #@-node:help
 #@+node:main
+
+
 def main():
     """
     Front end for fcpget utility
@@ -53,12 +57,17 @@ def main():
 
     # try to create the node
     try:
-        fcp_node = node.FCPNode(host=args.fcphost, port=args.fcpport, verbosity=verbosity,
-                         logfile=sys.stderr)
+        fcp_node = node.FCPNode(
+            host=args.fcphost,
+            port=args.fcpport,
+            verbosity=verbosity,
+            logfile=sys.stderr)
     except:
         if verbose:
             traceback.print_exc(file=sys.stderr)
-        sys.stderr.write("Failed to connect to FCP service at %s:%d\n" % (args.fcphost, args.fcpport))
+        sys.stderr.write(
+            "Failed to connect to FCP service at %s:%d\n" %
+            (args.fcphost, args.fcpport))
         sys.exit(1)
 
     # grab the keypair
