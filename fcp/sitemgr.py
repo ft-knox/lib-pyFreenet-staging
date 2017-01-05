@@ -1343,11 +1343,12 @@ class SiteState:
 
         Files are selected for the manifest until the manifest reaches
         maxManifestSizeBytes based on the following rules:
-        - index and activelink.png are always included
-        - the first to include are CSS files referenced in the index, smallest first
-        - then follow all other files referenced in the index, smallest first
-        - then follow html files not referenced in the index, smallest first
-        - then follow all other files, smallest first
+
+            - index and activelink.png are always included
+            - the first to include are CSS files referenced in the index, smallest first
+            - then follow all other files referenced in the index, smallest first
+            - then follow html files not referenced in the index, smallest first
+            - then follow all other files, smallest first
 
         The manifest goes above the max size if that is necessary to avoid having more
         than maxNumberSeparateFiles redirects.

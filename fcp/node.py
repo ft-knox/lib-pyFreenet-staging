@@ -2675,11 +2675,11 @@ class FCPNode:
         """
         Turn the CompressionCodecs into a string accepted by the node.
 
-        @param CompressionCodecs: [(name, number), ...]
         @return: "GZIP, BZIP2, LZMA" (example)
 
         """
         return ", ".join([name for name, num in self.compressionCodecs])
+
     #@-node:defaultCompressionCodecsString
     #@+node:_getUniqueId
     def _getUniqueId(self):
@@ -3170,8 +3170,8 @@ def readdir(dirpath, prefix='', gethashes=False):
     """
     Reads a directory, returning a sequence of file dicts.
 
-    TODO: Currently this uses sha1 as hash. Freenet uses 256. But the
-          hashes are not used.
+    TODO: Currently this uses sha1 as hash. Freenet uses 256. But the hashes are
+    not used.
 
     Arguments:
       - dirpath - relative or absolute pathname of directory to scan
@@ -3288,10 +3288,13 @@ def guessMimetype(filename):
 _re_slugify = re.compile('[^\w\s\.-]', re.UNICODE)
 _re_slugify_multidashes = re.compile('[-\s]+', re.UNICODE)
 def toUrlsafe(filename):
-    """Make a filename url-safe, keeping only the basename and killing all
-potentially unfitting characters.
+    """
+    Make a filename url-safe, keeping only the basename and killing all
+    potentially unfitting characters.
 
-    :returns: urlsafe basename of the file as string."""
+    :returns: urlsafe basename of the file as string.
+    """
+
     filename = unicode(os.path.basename(filename), encoding="utf-8", errors="ignore")
     filename = unicodedata.normalize('NFKD', filename).encode("ascii", "ignore")
     filename = unicode(_re_slugify.sub('', filename).strip())
